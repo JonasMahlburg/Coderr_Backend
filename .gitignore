@@ -322,4 +322,8 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 
+# Custom ignore
+Checkliste Django_DRF-Projekte.pdf
+EndpointDoku.txt
+
 # End of https://www.toptal.com/developers/gitignore/api/python,django,macos,windows
