@@ -50,6 +50,55 @@ class UserProfileSerializer(serializers.ModelSerializer):
         return instance
 
 
+class CustomerProfileSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source='user.username', read_only=True, default='')
+    first_name = serializers.CharField(source='user.first_name', allow_blank=True, default='')
+    last_name = serializers.CharField(source='user.last_name', allow_blank=True, default='')
+    file = serializers.CharField(allow_blank=True, default='')
+    uploaded_at = serializers.DateTimeField(source='created_at', read_only=True)
+    type = serializers.CharField(read_only=True, default='customer')
+
+    class Meta:
+        model = UserProfile
+        fields = [
+            'user', 'username', 'first_name', 'last_name',
+            'file', 'uploaded_at', 'type'
+        ]
+
+    def to_representation(self, instance):
+        rep = super().to_representation(instance)
+        for key, value in rep.items():
+            if value is None:
+                rep[key] = ''
+        return rep
+
+
+class BusinessProfileSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source='user.username', read_only=True, default='')
+    first_name = serializers.CharField(source='user.first_name', allow_blank=True, default='')
+    last_name = serializers.CharField(source='user.last_name', allow_blank=True, default='')
+    file = serializers.CharField(allow_blank=True, default='')
+    location = serializers.CharField(allow_blank=True, default='')
+    tel = serializers.CharField(allow_blank=True, default='')
+    description = serializers.CharField(allow_blank=True, default='')
+    working_hours = serializers.CharField(allow_blank=True, default='')
+    type = serializers.CharField(read_only=True, default='business')
+
+    class Meta:
+        model = UserProfile
+        fields = [
+            'user', 'username', 'first_name', 'last_name', 'file',
+            'location', 'tel', 'description', 'working_hours', 'type'
+        ]
+
+    def to_representation(self, instance):
+        rep = super().to_representation(instance)
+        for key, value in rep.items():
+            if value is None:
+                rep[key] = ''
+        return rep
+
+
 class RegistrationSerializer(serializers.ModelSerializer):
     """
 Serializer for user registration.

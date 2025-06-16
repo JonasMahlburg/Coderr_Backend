@@ -1,8 +1,8 @@
 from rest_framework import generics, status
 from django.contrib.auth.models import User
 from auth_app.models import UserProfile
-from .serializers import RegistrationSerializer, UsernameAuthTokenSerializer, UserProfileSerializer
-from .permissions import IsOwner
+from .serializers import RegistrationSerializer, UsernameAuthTokenSerializer, UserProfileSerializer, CustomerProfileSerializer, BusinessProfileSerializer
+from .permissions import IsOwner, IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
 from rest_framework.authtoken.models import Token
@@ -40,6 +40,12 @@ class UserProfileDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = UserProfile.objects.all()
     serializer_class = UserProfileSerializer
     permission_classes = [IsOwner]
+
+    def get_object(self):
+        user_id = self.kwargs['pk']
+        obj = generics.get_object_or_404(UserProfile, user__id=user_id)
+        self.check_object_permissions(self.request, obj)  # <-- wichtig!
+        return obj
 
 
 class RegistrationView(APIView):
@@ -114,3 +120,16 @@ class CustomLogInView(ObtainAuthToken):
                 status=status.HTTP_400_BAD_REQUEST)
             
 
+class BusinessUserListView(generics.ListAPIView):
+    serializer_class = BusinessProfileSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return UserProfile.objects.filter(type='business')
+
+class CustomerUserListView(generics.ListAPIView):
+    serializer_class = CustomerProfileSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return UserProfile.objects.filter(type='customer')
