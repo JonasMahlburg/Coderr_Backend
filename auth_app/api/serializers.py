@@ -8,20 +8,46 @@ from rest_framework.response import Response
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
-    """
-Serializer for the UserProfile model.
 
-Handles serialization and deserialization of user profile data,
-including related user object, biography, and location information.
+    username = serializers.CharField(source='user.username', read_only=True, default='')
+    first_name = serializers.CharField(source='user.first_name', allow_blank=True, default='')
+    last_name = serializers.CharField(source='user.last_name', allow_blank=True, default='')
+    email = serializers.EmailField(source='user.email', allow_blank=True, default='')
+    type = serializers.CharField(allow_blank=True, default='')
+    location = serializers.CharField(allow_blank=True, default='')
+    tel = serializers.CharField(allow_blank=True, default='')
+    description = serializers.CharField(allow_blank=True, default='')
+    working_hours = serializers.CharField(allow_blank=True, default='')
+    file = serializers.CharField(allow_blank=True, default='')
 
-Fields:
-    user (User): Reference to the related user account.
-    bio (str): Short biography of the user.
-    location (str): Location of the user.
-"""
     class Meta:
         model = UserProfile
-        fields = ['user', 'bio', 'location']
+        fields = [
+            'user', 'username', 'first_name', 'last_name', 'location', 'tel',
+            'description', 'working_hours', 'type', 'email', 'created_at', 'file'
+        ]
+        read_only_fields = ['user', 'username', 'type', 'created_at']
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        for key, value in representation.items():
+            if value is None:
+                representation[key] = ''
+        return representation
+    
+    def update(self, instance, validated_data):
+        user_data = validated_data.pop('user', {})
+
+        user = instance.user
+        for attr, value in user_data.items():
+            setattr(user, attr, value if value is not None else '')
+        user.save()
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value if value is not None else '')
+        instance.save()
+
+        return instance
 
 
 class RegistrationSerializer(serializers.ModelSerializer):
@@ -89,51 +115,7 @@ Fields:
         return account
 
 
-# class UsernameAuthTokenSerializer(serializers.Serializer):
-#     """
-#     Serializer for authenticating a user using email and password.
 
-#     Fields:
-#         email (str): The user's email address.
-#         password (str): The user's password.
-
-#     Methods:
-#         validate(attrs): Authenticates the user and returns user object if valid.
-#     """
-#     username = serializers.CharField(label="Username", write_only=True)
-#     password = serializers.CharField(label="Password", style={'input_type': 'password'}, trim_whitespace=False)
-
-#     def validate(self, attrs):
-#         """
-#         Validate and authenticate the user using provided email and password.
-
-#         Args:
-#             attrs (dict): Dictionary containing 'email' and 'password'.
-
-#         Returns:
-#             dict: Dictionary including the authenticated user.
-
-#         Raises:
-#             serializers.ValidationError: If authentication fails or required fields are missing.
-#         """
-#         username = attrs.get('username')
-#         password = attrs.get('password')
-
-#         if username and password:
-#             try:
-#                 user = User.objects.get(username=username)
-#             except User.DoesNotExist:
-#                 raise serializers.ValidationError("Invalid email or password.")
-
-#             user = authenticate(self.context.get('request'), username=user.username, password=password)
-#             if not user:
-#                 raise serializers.ValidationError("Invalid email or password.")
-#         else:
-#             raise serializers.ValidationError("Must include 'email' and 'password'.")
-
-#         attrs['user'] = user
-#         return attrs
-    
 class UsernameAuthTokenSerializer(serializers.Serializer):
     """
     Serializer for authenticating a user using username and password.

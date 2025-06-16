@@ -1,7 +1,8 @@
 from rest_framework import generics, status
 from django.contrib.auth.models import User
 from auth_app.models import UserProfile
-from .serializers import RegistrationSerializer, UsernameAuthTokenSerializer
+from .serializers import RegistrationSerializer, UsernameAuthTokenSerializer, UserProfileSerializer
+from .permissions import IsOwner
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
 from rest_framework.authtoken.models import Token
@@ -37,7 +38,8 @@ class UserProfileDetail(generics.RetrieveUpdateDestroyAPIView):
         delete(): Deletes a user profile by ID.
     """
     queryset = UserProfile.objects.all()
-    serializer_class = RegistrationSerializer
+    serializer_class = UserProfileSerializer
+    permission_classes = [IsOwner]
 
 
 class RegistrationView(APIView):
