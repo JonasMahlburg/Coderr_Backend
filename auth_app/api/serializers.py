@@ -138,6 +138,9 @@ Fields:
 
         if User.objects.filter(email=validated_data['email']).exists():
             raise serializers.ValidationError({'error': 'This email is already taken'})
+        
+        if User.objects.filter(username=username).exists():
+            raise serializers.ValidationError({'error': 'This username is already taken'})
 
         base_username = username.strip().replace(" ", "").lower()
         username = base_username
