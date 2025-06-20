@@ -1,9 +1,9 @@
-from rest_framework.test import APITestCase, APIClient
+from rest_framework.test import APITestCase
 from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import User
 from auth_app.models import UserProfile
 from rest_framework import status
-from django.urls import reverse
+
 
 class OffersAPITest(APITestCase):
 
