@@ -27,6 +27,12 @@ class OrderSerializer(serializers.ModelSerializer):
     # `read_only=True` für GET-Requests. Beim Erstellen wird nur die OfferDetail-ID erwartet.
     ordered_detail = OfferDetailSerializer(read_only=True)
 
+    offer_detail_id = serializers.PrimaryKeyRelatedField(
+        queryset=OfferDetail.objects.all(),
+        write_only=True,
+        required=True
+    )
+
     # Zusätzliche berechnete Felder (optional, falls du sie nicht im Model hast)
     # Wenn price_at_order im Model ist, brauchst du dieses get_total_price nicht mehr als SerializerMethodField.
     # get_total_price = serializers.SerializerMethodField()
@@ -35,37 +41,30 @@ class OrderSerializer(serializers.ModelSerializer):
         model = Order
         fields = [
             'id', 'customer', 'offer', 'ordered_detail', 'status',
-            'quantity', 'price_at_order', 'created_at', 'updated_at'
-            # Füge hier get_total_price hinzu, wenn du es als SerializerMethodField nutzen willst
+            'quantity', 'price_at_order', 'created_at', 'updated_at',
+            'offer_detail_id'
         ]
-        read_only_fields = ['customer', 'created_at', 'updated_at', 'price_at_order'] # Diese Felder sollten nicht vom Client gesetzt werden
+        read_only_fields = ['customer', 'created_at', 'updated_at', 'price_at_order', 'offer', 'ordered_detail'] # Diese Felder sollten nicht vom Client gesetzt werden
 
     # Custom create-Methode für verschachteltes Schreiben
     # Beim Erstellen einer Bestellung (POST) sendest du nur die IDs
     # Für PATCH/PUT musst du überlegen, ob du diese Felder direkt ändern lassen willst
     def create(self, validated_data):
-        # Wir müssen die IDs für Offer und OfferDetail manuell behandeln,
-        # da sie nicht direkt als Objekte im validated_data sind, wenn sie nur als IDs gesendet werden.
-        # Aber da wir sie als read_only=True im Serializer definiert haben, sind sie nicht in validated_data.
-        # Stattdessen wird die View die FK-Objekte direkt setzen.
+        customer = self.context['request'].user
+        validated_data.pop('customer', None)
+        offer_detail = validated_data.pop('offer_detail_id', None)
+        offer = offer_detail.offer
+        price_at_order = offer_detail.price
 
-        # Hier ist ein Beispiel, wie man die ForeignKey-Objekte setzen würde,
-        # wenn sie als ID im validated_data kämen und nicht direkt von der View gesetzt würden.
-        # Da wir sie read-only für die Ausgabe haben, werden wir erwarten, dass die View sie setzt.
-
-        # Für die Erstellung ist es oft so, dass der Kunde, das Angebot und das Detail
-        # als IDs im Request-Body gesendet werden. Der Serializer muss das verarbeiten können.
-        # Dazu müssen wir die Felder im Serializer anders definieren, wenn sie beschreibbar sein sollen.
-
-        # Da du bereits `customer = UserSerializerForOrder(read_only=True)` hast,
-        # gehst du davon aus, dass `customer` vom Request User gesetzt wird.
-        # Für `offer` und `ordered_detail` müsstest du `PrimaryKeyRelatedField` nutzen.
-
-        # Neudefinition der Felder für das Schreiben
-        # Diese Create-Methode muss angepasst werden, wenn du die `offer` und `ordered_detail` IDs direkt in deinem POST-Payload haben möchtest.
-        # Standardmäßig, wenn du `ForeignKey` in ModelSerializer nicht explizit als `PrimaryKeyRelatedField` definierst,
-        # erwartet er die ID.
-        return super().create(validated_data)
+        order = Order.objects.create(
+            customer=customer,
+            offer=offer,
+            ordered_detail=offer_detail,
+            price_at_order=price_at_order,
+            status='in_progress',  # 👈 Hier explizit setzen
+            **validated_data
+        )
+        return order
 
     # def get_total_price(self, obj):
     #     return obj.get_total_price() # Ruft die Methode aus dem Order-Modell auf

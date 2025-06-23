@@ -3,7 +3,7 @@ from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import User
 from auth_app.models import UserProfile
 from rest_framework import status
-from django.urls import reverse
+
 
 class UserProfileAPITests(APITestCase):
     def setUp(self):

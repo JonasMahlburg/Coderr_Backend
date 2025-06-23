@@ -3,6 +3,7 @@ from rest_framework import generics
 from orders_app.models import Order
 from .serializers import OrderCombinedSerializer # Importiere den neuen Serializer
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 
 
 class OrderListCreateView(generics.ListCreateAPIView):
@@ -33,8 +34,15 @@ class OrderListCreateView(generics.ListCreateAPIView):
 
 
     def perform_create(self, serializer):
-        # Setze den Kunden automatisch auf den aktuell eingeloggten Benutzer
-        serializer.save(customer=self.request.user)
+        order = serializer.save()
+        order.customer = self.request.user
+        order.save()
+        self._created_order = order  # speichere das Objekt zur späteren Verwendung
+
+    def create(self, request, *args, **kwargs):
+        response = super().create(request, *args, **kwargs)
+        combined_data = OrderCombinedSerializer(self._created_order).data
+        return Response(combined_data, status=201)
 
 class OrderDetailView(generics.RetrieveUpdateDestroyAPIView):
     # Das Queryset sollte alle Orders enthalten, auf die der Benutzer zugreifen darf

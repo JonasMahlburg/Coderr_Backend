@@ -13,6 +13,18 @@ class Offer(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    OFFER_TYPE_CHOICES = [
+        ('basic', 'Basic'),
+        ('standard', 'Standard'),
+        ('premium', 'Premium'),
+    ]
+    offer_type = models.CharField(
+        max_length=20,
+        choices=OFFER_TYPE_CHOICES,
+        default='basic'
+    )
+
+
 class OfferDetail(models.Model):
     offer = models.ForeignKey(Offer, on_delete=models.CASCADE, related_name='details')
     title = models.CharField(max_length=255)
