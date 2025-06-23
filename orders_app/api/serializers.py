@@ -117,3 +117,14 @@ class OrderCombinedSerializer(serializers.ModelSerializer):
         ]
         # Alle Felder in diesem Serializer sollen nur gelesen werden können für diese kombinierte Ansicht
         read_only_fields = fields
+
+class OrderStatusUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Order
+        fields = ['status']
+
+    def validate_status(self, value):
+        allowed = ['in_progress', 'completed', 'cancelled']
+        if value not in allowed:
+            raise serializers.ValidationError(f"Status '{value}' ist nicht erlaubt.")
+        return value

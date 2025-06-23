@@ -1,9 +1,12 @@
-# orders_app/views.py
+from rest_framework.views import APIView
 from rest_framework import generics
 from orders_app.models import Order
-from .serializers import OrderCombinedSerializer # Importiere den neuen Serializer
+from .serializers import OrderCombinedSerializer, OrderStatusUpdateSerializer  # Importiere die neuen Serializer
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from django.shortcuts import get_object_or_404
+from django.contrib.auth.models import User
+
 
 
 class OrderListCreateView(generics.ListCreateAPIView):
@@ -66,3 +69,38 @@ class OrderDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     permission_classes = [IsAuthenticated]
     lookup_field = 'pk' # Stellen wir sicher, dass es 'pk' ist, wie in urls.py definiert
+
+    def patch(self, request, *args, **kwargs):
+        order = self.get_object()
+
+        # Nur Anbieter des zugehörigen Offers dürfen den Status ändern
+        if order.offer.user != request.user:
+            return Response({'detail': 'Nur der Anbieter kann den Status aktualisieren.'}, status=403)
+
+        serializer = OrderStatusUpdateSerializer(order, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        # Rückgabe der aktualisierten Bestellung mit vollständigen Details
+        combined_serializer = OrderCombinedSerializer(order)
+        return Response(combined_serializer.data, status=200)
+
+class OrderCountView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, business_user_id):
+        # Existenz des Business-Users prüfen
+        user = get_object_or_404(User, pk=business_user_id)
+
+        # Anzahl laufender Bestellungen zählen
+        count = Order.objects.filter(offer__user=user, status='in_progress').count()
+
+        return Response({'order_count': count}, status=200)
+    
+class CompletedOrderCountView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, business_user_id):
+        user = get_object_or_404(User, pk=business_user_id)
+        count = Order.objects.filter(offer__user=user, status='completed').count()
+        return Response({'completed_order_count': count}, status=200)

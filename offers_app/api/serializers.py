@@ -70,24 +70,6 @@ class OfferDetailLinkSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         return request.build_absolute_uri(f'/api/offerdetails/{obj.id}/')
 
-# class OfferRetrieveSerializer(serializers.ModelSerializer):
-#     details = OfferDetailLinkSerializer(many=True, read_only=True)
-#     min_price = serializers.SerializerMethodField()
-#     min_delivery_time = serializers.SerializerMethodField()
-
-#     class Meta:
-#         model = Offer
-#         fields = [
-#             'id', 'user', 'title', 'image', 'description',
-#             'created_at', 'updated_at', 'details', 'min_price', 'min_delivery_time'
-#         ]
-
-#     def get_min_price(self, obj):
-#         return obj.details.aggregate(models.Min('price'))['price__min'] or 0
-
-#     def get_min_delivery_time(self, obj):
-#         return obj.details.aggregate(models.Min('delivery_time_in_days'))['delivery_time_in_days__min'] or 0
-
 
 class OfferRetrieveSerializer(serializers.ModelSerializer):
     # Ändere dies von OfferDetailLinkSerializer zu OfferDetailSerializer
@@ -119,9 +101,7 @@ class OfferRetrieveSerializer(serializers.ModelSerializer):
     
 
 class OfferPatchSerializer(serializers.ModelSerializer):
-    # Das 'details'-Feld ist optional und read-only, da wir die Logik im update() steuern
-    # oder wenn es im Payload ist, es wie gewünscht verarbeiten wollen.
-    # Hier setzen wir 'required=False', damit es bei einem PATCH ohne Details nicht validiert wird.
+
     details = OfferDetailSerializer(many=True, required=False)
     min_price = serializers.SerializerMethodField(read_only=True)
     min_delivery_time = serializers.SerializerMethodField(read_only=True)
@@ -135,11 +115,7 @@ class OfferPatchSerializer(serializers.ModelSerializer):
             'created_at', 'updated_at', 'details',
             'min_price', 'min_delivery_time', 'user_details'
         ]
-        # 'partial=True' in der Meta-Klasse wird von ModelSerializer gehandhabt,
-        # aber hier definieren wir die Felder explizit als nicht erforderlich für PATCH,
-        # indem wir `required=False` in den Feldern setzen, die optional sein sollen.
-        # title und description sind standardmäßig required, außer wenn partial=True in der View ist.
-        # Wir müssen sie hier nicht explizit als required=False setzen, da die View partial_update() nutzt.
+
 
     def validate(self, data):
         # Diese Validierung wird nur durchgeführt, wenn 'details' im PATCH-Payload enthalten ist.

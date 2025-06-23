@@ -1,9 +1,13 @@
+from offers_app.models import Offer, OfferDetail
+from orders_app.models import Order
 from rest_framework.test import APITestCase, APIClient
 from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import User
 from auth_app.models import UserProfile
 from rest_framework import status
 from decimal import Decimal
+
+
 
 class OrdersAPITests(APITestCase):
 
@@ -68,3 +72,119 @@ class OrdersAPITests(APITestCase):
         self.assertEqual(Decimal(response.data['price']), Decimal('150.00'))
         self.assertIn(response.data['offer_type'], ["basic", "", None])
         self.assertEqual(response.data['status'], "in_progress")
+
+
+    def test_patch_order_status_as_business_user(self):
+
+
+        # Erstelle ein Angebot und ein zugehöriges Detail
+        offer = Offer.objects.create(
+            user=self.business_user,
+            title="Logo Design",
+            description="Design Services",
+            offer_type="basic"
+        )
+        detail = OfferDetail.objects.create(
+            offer=offer,
+            title="Logo & Visitenkarte",
+            price=150,
+            delivery_time_in_days=5,
+            revisions=3,
+            features=["Logo Design", "Visitenkarten"]
+        )
+
+        # Erstelle eine Bestellung
+        order = Order.objects.create(
+            customer=self.customer_user,
+            offer=offer,
+            ordered_detail=detail,
+            price_at_order=detail.price,
+            status='in_progress'
+        )
+
+        # Authentifiziere als Anbieter (business_user)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token.key)
+
+        url = f'http://127.0.0.1:8000/api/orders/{order.id}/'
+        response = self.client.patch(url, {'status': 'completed'}, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['status'], 'completed')
+
+    def test_get_order_count_for_business_user(self):
+
+
+    # Setup: Erstelle ein Angebot und ein Detail für den Business User
+        offer = Offer.objects.create(
+            user=self.business_user,
+            title="Website Design",
+            description="Komplettes Webpaket",
+            offer_type="premium"
+        )
+        detail = OfferDetail.objects.create(
+            offer=offer,
+            title="Komplett-Paket",
+            price=2000,
+            delivery_time_in_days=14,
+            revisions=5,
+            features=["Webdesign", "Hosting", "Support"]
+        )
+
+    # Erstelle 3 in_progress Bestellungen + 1 completed
+        for order_status in ['in_progress', 'in_progress', 'in_progress', 'completed']:
+            Order.objects.create(
+                customer=self.customer_user,
+                offer=offer,
+                ordered_detail=detail,
+                price_at_order=detail.price,
+                status=order_status
+            )
+
+    # Authentifiziere als beliebiger Benutzer (z.B. customer)
+        token = Token.objects.create(user=self.customer_user)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token.key)
+
+        url = f'/api/order-count/{self.business_user.id}/'
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['order_count'], 3)
+   
+    def test_get_completed_order_count_for_business_user(self):
+
+
+        # Setup Angebot + Detail
+        offer = Offer.objects.create(
+            user=self.business_user,
+            title="SEO Paket",
+            description="Komplettoptimierung",
+            offer_type="standard"
+        )
+        detail = OfferDetail.objects.create(
+            offer=offer,
+            title="SEO Advanced",
+            price=500,
+            delivery_time_in_days=7,
+            revisions=2,
+            features=["OnPage", "OffPage"]
+        )
+
+        # 2 completed + 1 in_progress
+        for s in ['completed', 'completed', 'in_progress']:
+            Order.objects.create(
+                customer=self.customer_user,
+                offer=offer,
+                ordered_detail=detail,
+                price_at_order=detail.price,
+                status=s
+            )
+
+        # Authentifiziere als beliebiger User
+        token = Token.objects.create(user=self.customer_user)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token.key)
+
+        url = f'/api/completed-order-count/{self.business_user.id}/'
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['completed_order_count'], 2)
