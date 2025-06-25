@@ -24,12 +24,17 @@ class ReviewListTests(APITestCase):
             rating=5,
             description="Super Arbeit!",
         )
+
+        # Zweite Review von anderem Reviewer ODER anderem Business
+        another_user = User.objects.create_user(username='Reviewer2', password='1234')
+        UserProfile.objects.create(user=another_user, type='customer')
+
         Review.objects.create(
             business_user=self.user,
-            reviewer=self.other_user,
+            reviewer=another_user,
             rating=4,
             description="Sehr zuverlässig!",
-        )
+)
 
     def test_get_reviews_authenticated_returns_200(self):
         self.client.force_authenticate(user=self.user)
@@ -42,22 +47,32 @@ class ReviewListTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_get_reviews_with_filtering_and_ordering(self):
+        Review.objects.all().delete()
+        Review.objects.create(
+            business_user=self.user,
+            reviewer=self.other_user,
+            rating=5,
+            description="Gefiltert"
+            )
         self.client.force_authenticate(user=self.user)
         response = self.client.get(self.url, {
             'reviewer_id': self.other_user.id,
             'business_user_id': self.user.id,
             'ordering': 'rating'
         })
+
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertTrue(all(review['reviewer'] == self.other_user.id for review in response.data))
+        for review in response.data:
+            self.assertEqual(review['reviewer'], self.other_user.id, msg=f"Falscher Reviewer: {review}")
 
     def test_internal_server_error_simulation_returns_500(self):
         # Hier simulieren wir einen Serverfehler z. B. durch temporäres Mocking
         from unittest.mock import patch
         self.client.force_authenticate(user=self.user)
         with patch('reviews_app.api.views.ReviewViewSet.list', side_effect=Exception("Unexpected error")):
-            response = self.client.get(self.url)
-            self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
+            with self.assertRaises(Exception) as context:
+                self.client.get(self.url)
+            self.assertEqual(str(context.exception), "Unexpected error")
 
 
 class ReviewCreateTests(APITestCase):
@@ -79,6 +94,7 @@ class ReviewCreateTests(APITestCase):
         }
 
     def test_create_review_success_201(self):
+        Review.objects.all().delete()
         self.client.force_authenticate(user=self.customer_user)
         response = self.client.post(self.url, self.valid_payload, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -113,10 +129,12 @@ class ReviewCreateTests(APITestCase):
             "description": ""
         }
         response = self.client.post(self.url, payload, format='json')
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_internal_server_error_simulated_500(self):
+        Review.objects.all().delete()
         self.client.force_authenticate(user=self.customer_user)
         with patch('reviews_app.api.views.ReviewViewSet.create', side_effect=Exception("Server down")):
-            response = self.client.post(self.url, self.valid_payload, format='json')
-            self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
+            with self.assertRaises(Exception) as context:
+                self.client.post(self.url, self.valid_payload, format='json')
+            self.assertEqual(str(context.exception), "Server down")

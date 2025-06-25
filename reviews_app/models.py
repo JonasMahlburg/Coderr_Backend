@@ -25,10 +25,8 @@ class Review(models.Model):
     def clean(self):
         if self.business_user == self.reviewer:
             raise ValidationError("Benutzer können sich nicht selbst bewerten.")
-        try:
-            if self.reviewer.userprofile.type != 'customer':
-                raise ValidationError("Nur Kunden können Bewertungen schreiben.")
-        except UserProfile.DoesNotExist:
+        profile = getattr(self.reviewer, 'userprofile', None)
+        if not profile or profile.type != 'customer':
             raise ValidationError("Nur Kunden mit Profil dürfen Bewertungen schreiben.")
 
     def save(self, *args, **kwargs):
