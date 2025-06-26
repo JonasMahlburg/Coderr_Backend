@@ -3,6 +3,7 @@ from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import User
 from auth_app.models import UserProfile
 from rest_framework import status
+from django.urls import reverse
 
 
 class OffersAPITest(APITestCase):
@@ -27,13 +28,13 @@ class OffersAPITest(APITestCase):
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token.key)
 
     def test_get_offers(self):
-        url = 'http://127.0.0.1:8000/api/offers/'
+        url = reverse('offer-list')
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_post_offers(self):
-        url = 'http://127.0.0.1:8000/api/offers/'
+        url = reverse('offer-list')
         data = {
             "title": "Design-Paket",
             "description": "Ein umfangreiches Design-Angebot.",
@@ -67,9 +68,52 @@ class OffersAPITest(APITestCase):
         response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
+    def test_get_offer_by_id(self):
+        # Erst ein Angebot erstellen
+        create_url = reverse('offer-list')
+        offer_data = {
+            "title": "Einzelabruf-Angebot",
+            "description": "Für GET /offers/{id}/ Test",
+            "details": [
+                {
+                    "title": "Einzeldetail",
+                    "revisions": 1,
+                    "delivery_time_in_days": 2,
+                    "price": 100.00,
+                    "features": "Ein Feature",
+                    "offer_type": "graphic"
+                },
+                {
+                    "title": "Zusatzdetail",
+                    "revisions": 2,
+                    "delivery_time_in_days": 3,
+                    "price": 150.00,
+                    "features": "Zwei Features",
+                    "offer_type": "digital"
+                },
+                {
+                    "title": "Expressdetail",
+                    "revisions": 1,
+                    "delivery_time_in_days": 1,
+                    "price": 75.00,
+                    "features": "Express Feature",
+                    "offer_type": "print"
+                }
+            ]
+        }
+        create_response = self.client.post(create_url, offer_data, format='json')
+        self.assertEqual(create_response.status_code, status.HTTP_201_CREATED)
+        offer_id = create_response.data['id']
+
+        # Nun das erstellte Angebot über ID abrufen
+        get_url = reverse('offer-detail', kwargs={'pk': offer_id})
+        get_response = self.client.get(get_url)
+        self.assertEqual(get_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(get_response.data['id'], offer_id)
+
     def test_patch_offer(self):
         # 1. Angebot anlegen
-        create_url = 'http://127.0.0.1:8000/api/offers/'
+        create_url = reverse('offer-list')
         offer_data = {
             "title": "Design-Paket",
             "description": "Alte Beschreibung.",
@@ -107,7 +151,7 @@ class OffersAPITest(APITestCase):
         offer_id = create_response.data['id']
 
         # 3. PATCH-Daten vorbereiten
-        patch_url = f'http://127.0.0.1:8000/api/offers/{offer_id}/'
+        patch_url = reverse('offer-detail', kwargs={'pk': offer_id})
         patch_data = {
             "description": "Neue, verbesserte Beschreibung"
         }
@@ -121,7 +165,7 @@ class OffersAPITest(APITestCase):
 
     def test_delete_offer(self):
         # 1. Angebot anlegen
-        create_url = 'http://127.0.0.1:8000/api/offers/'
+        create_url = reverse('offer-list')
         offer_data = {
             "title": "Löschbares Angebot",
             "description": "Wird gleich gelöscht.",
@@ -156,7 +200,7 @@ class OffersAPITest(APITestCase):
         self.assertEqual(create_response.status_code, status.HTTP_201_CREATED)
 
         offer_id = create_response.data['id']
-        delete_url = f'http://127.0.0.1:8000/api/offers/{offer_id}/'
+        delete_url = reverse('offer-detail', kwargs={'pk': offer_id})
 
         # 2. DELETE-Anfrage senden
         delete_response = self.client.delete(delete_url)
@@ -167,3 +211,48 @@ class OffersAPITest(APITestCase):
         # 4. Sicherstellen, dass das Angebot wirklich weg ist
         get_response = self.client.get(delete_url)
         self.assertEqual(get_response.status_code, status.HTTP_404_NOT_FOUND)
+
+
+    def test_get_offerdetail_by_id(self):
+        # Erst ein Angebot erstellen
+        create_url = reverse('offer-list')
+        offer_data = {
+            "title": "Angebot mit Detailabruf",
+            "description": "Für GET /offerdetails/{id}/ Test",
+            "details": [
+                {
+                    "title": "Ein Detail",
+                    "revisions": 1,
+                    "delivery_time_in_days": 2,
+                    "price": 100.00,
+                    "features": "Test-Feature",
+                    "offer_type": "graphic"
+                },
+                {
+                    "title": "Zweites Detail",
+                    "revisions": 1,
+                    "delivery_time_in_days": 2,
+                    "price": 110.00,
+                    "features": "Zweites Feature",
+                    "offer_type": "digital"
+                },
+                {
+                    "title": "Drittes Detail",
+                    "revisions": 1,
+                    "delivery_time_in_days": 2,
+                    "price": 120.00,
+                    "features": "Drittes Feature",
+                    "offer_type": "print"
+                }
+            ]
+        }
+        create_response = self.client.post(create_url, offer_data, format='json')
+        self.assertEqual(create_response.status_code, status.HTTP_201_CREATED)
+        offer_details = create_response.data['details']
+        self.assertTrue(len(offer_details) > 0)
+
+        detail_id = offer_details[0]['id']
+        detail_url = reverse('offerdetail-detail', kwargs={'pk': detail_id})
+        detail_response = self.client.get(detail_url)
+        self.assertEqual(detail_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(detail_response.data['id'], detail_id)

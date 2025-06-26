@@ -1,4 +1,4 @@
-from rest_framework import generics, filters
+from rest_framework import viewsets, mixins, filters
 from offers_app.models import Offer, OfferDetail
 # Importiere deine neuen Serializer
 from .serializers import OfferSerializer, OfferListSerializer, OfferRetrieveSerializer, OfferDetailSerializer, OfferPatchSerializer
@@ -9,7 +9,7 @@ from .permissions import IsBusinessUser, IsAuthenticated, IsOfferOwner
 class OfferPagination(PageNumberPagination):
     page_size_query_param = 'page_size'
 
-class OfferListCreateView(generics.ListCreateAPIView):
+class OfferViewSet(viewsets.ModelViewSet):
     queryset = Offer.objects.all().order_by('-updated_at')
     permission_classes = [IsBusinessUser]
     pagination_class = OfferPagination
@@ -19,30 +19,18 @@ class OfferListCreateView(generics.ListCreateAPIView):
     ordering_fields = ['updated_at', 'details__delivery_time_in_days']
 
     def get_serializer_class(self):
-        if self.request.method == 'GET':
+        if self.action == 'list':
             return OfferListSerializer
-        # Für POST verwenden wir weiterhin den vollständigen OfferSerializer
+        elif self.action == 'retrieve':
+            return OfferRetrieveSerializer
+        elif self.action == 'partial_update':
+            return OfferPatchSerializer
         return OfferSerializer
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
-class OfferDetailView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Offer.objects.all()
-    permission_classes = [IsAuthenticated, IsOfferOwner]
-
-    def get_serializer_class(self):
-        if self.request.method == "GET":
-    
-            return OfferRetrieveSerializer
-        elif self.request.method == "PATCH":
-    
-            return OfferPatchSerializer
-      
-        return OfferSerializer
-
-
-class OfferDetailRetrieveView(generics.RetrieveAPIView):
+class OfferDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     queryset = OfferDetail.objects.all()
     serializer_class = OfferDetailSerializer
     permission_classes = []  # Keine Auth nötig

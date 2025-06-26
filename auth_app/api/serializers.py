@@ -142,12 +142,12 @@ Fields:
         if User.objects.filter(username=username).exists():
             raise serializers.ValidationError({'error': 'This username is already taken'})
 
-        base_username = username.strip().replace(" ", "").lower()
-        username = base_username
-        counter = 1
-        while User.objects.filter(username=username).exists():
-            username = f"{base_username}{counter}"
-            counter += 1
+        # base_username = username.strip().replace(" ", "").lower()
+        # username = base_username
+        # counter = 1
+        # while User.objects.filter(username=username).exists():
+        #     username = f"{base_username}{counter}"
+        #     counter += 1
 
         names = username.split()
         first_name = names[0] if len(names) > 0 else ""

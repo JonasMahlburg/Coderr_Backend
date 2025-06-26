@@ -1,3 +1,4 @@
+from django.urls import reverse
 from offers_app.models import Offer, OfferDetail
 from orders_app.models import Order
 from rest_framework.test import APITestCase, APIClient
@@ -32,7 +33,7 @@ class OrdersAPITests(APITestCase):
 
 
     def test_get_order(self):
-        url = 'http://127.0.0.1:8000/api/orders/'
+        url = reverse('order-list')
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
     
@@ -61,7 +62,7 @@ class OrdersAPITests(APITestCase):
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token.key)
 
         # Sende Bestellung
-        url = 'http://127.0.0.1:8000/api/orders/'
+        url = reverse('order-list')
         data = {
             "offer_detail_id": detail.id
         }
@@ -105,11 +106,41 @@ class OrdersAPITests(APITestCase):
         # Authentifiziere als Anbieter (business_user)
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token.key)
 
-        url = f'http://127.0.0.1:8000/api/orders/{order.id}/'
+        url = reverse('order-detail', kwargs={'pk': order.id})
         response = self.client.patch(url, {'status': 'completed'}, format='json')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['status'], 'completed')
+
+    def test_delete_order(self):
+        offer = Offer.objects.create(
+            user=self.business_user,
+            title="Angebot zum Löschen",
+            description="Testbeschreibung",
+            offer_type="basic"
+        )
+        detail = OfferDetail.objects.create(
+            offer=offer,
+            title="Detail zum Löschen",
+            price=100,
+            delivery_time_in_days=3,
+            revisions=2,
+            features=["Feature A"]
+        )
+        order = Order.objects.create(
+            customer=self.customer_user,
+            offer=offer,
+            ordered_detail=detail,
+            price_at_order=detail.price,
+            status='in_progress'
+        )
+
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token.key)
+        url = reverse('order-detail', kwargs={'pk': order.id})
+        response = self.client.delete(url)
+
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(Order.objects.filter(id=order.id).exists())
 
     def test_get_order_count_for_business_user(self):
 
@@ -144,7 +175,7 @@ class OrdersAPITests(APITestCase):
         token = Token.objects.create(user=self.customer_user)
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token.key)
 
-        url = f'/api/order-count/{self.business_user.id}/'
+        url = reverse('order-order-count', kwargs={'business_user_id': self.business_user.id})
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -183,7 +214,7 @@ class OrdersAPITests(APITestCase):
         token = Token.objects.create(user=self.customer_user)
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token.key)
 
-        url = f'/api/completed-order-count/{self.business_user.id}/'
+        url = reverse('order-completed-order-count', kwargs={'business_user_id': self.business_user.id})
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
