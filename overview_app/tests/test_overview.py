@@ -11,17 +11,19 @@ class BaseInfoAPITests(APITestCase):
         # Erstelle User + Profile
         user1 = User.objects.create(username="user1")
         user2 = User.objects.create(username="user2")
+        user3 = User.objects.create(username="user3")  # Neuer Reviewer
 
         UserProfile.objects.create(user=user1, type="customer")
         UserProfile.objects.create(user=user2, type="business")
+        UserProfile.objects.create(user=user3, type="customer")
 
         # Erstelle Reviews
         Review.objects.create(business_user=user2, reviewer=user1, rating=4, description="Gut!")
-        Review.objects.create(business_user=user2, reviewer=user1, rating=5, description="Top!")
+        Review.objects.create(business_user=user2, reviewer=user3, rating=5, description="Top!")
 
         # Erstelle Angebote
-        Offer.objects.create(owner=user2, title="Angebot 1", description="Test", price=10)
-        Offer.objects.create(owner=user2, title="Angebot 2", description="Test", price=20)
+        Offer.objects.create(user=user2, title="Angebot 1", description="Test")
+        Offer.objects.create(user=user2, title="Angebot 2", description="Test")
 
         self.url = "/api/base-info/"  # oder reverse('base-info') falls du es geroutet hast
 
