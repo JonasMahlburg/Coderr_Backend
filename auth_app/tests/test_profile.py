@@ -71,11 +71,12 @@ class AuthTests(APITestCase):
             "username": "JonasTest",
             "email": "jonas@example.com",
             "password": "strongPassword123",
-            "repeated_password": "strongPassword123"
+            "repeated_password": "strongPassword123",
+            "type": "customer"
         }
         response = self.client.post("/api/registration/", data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertIn("id", response.data)
+        self.assertIn("user_id", response.data)
 
     def test_registration_password_mismatch(self):
         data = {
@@ -149,7 +150,7 @@ class ProfileTests(APITestCase):
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token.key)
 
         # Base URL for profile details (using reverse for robustness)
-        self.detail_url = f'/profiles/{self.user.id}/'
+        self.detail_url = f'/api/profile/{self.profile.pk}/'
 
     def test_get_own_profile(self):
         # Now the client is authenticated, and the URL is correct
