@@ -40,3 +40,9 @@ class BaseInfoAPITests(APITestCase):
         }
 
         self.assertEqual(response.data, expected)
+
+    def test_base_info_accessible_without_authentication(self):
+        # Deauthentifiziere Client, falls ein Login vorliegt
+        self.client.credentials()  # entfernt Auth-Header
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
