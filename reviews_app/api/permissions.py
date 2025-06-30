@@ -5,6 +5,7 @@ class IsCustomerAndNotReviewedBefore(BasePermission):
     """
     Erlaubt nur authentifizierten Nutzern mit Kundenprofil eine Bewertung abzugeben.
     Außerdem darf der Nutzer noch keine Bewertung für das angegebene Geschäftsprofil abgegeben haben.
+    Nur der Ersteller darf eine Bewertung bearbeiten oder löschen.
     """
 
     def has_permission(self, request, view):
@@ -12,6 +13,8 @@ class IsCustomerAndNotReviewedBefore(BasePermission):
         if not request.user or not request.user.is_authenticated:
             return False
         if not hasattr(request.user, 'userprofile'):
+            return False
+        if request.user.userprofile.type != 'customer':
             return False
 
         if request.method == 'POST':
@@ -23,7 +26,9 @@ class IsCustomerAndNotReviewedBefore(BasePermission):
         return True
 
     def has_object_permission(self, request, view, obj):
-        # Optional: falls Objektprüfung notwendig ist
+        # Nur der Ersteller darf das Review ändern oder löschen
+        if request.method in ['PATCH', 'DELETE']:
+            return obj.reviewer == request.user
         return True
     
 

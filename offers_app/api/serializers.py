@@ -20,7 +20,7 @@ class OfferSerializer(serializers.ModelSerializer):
         model = Offer
         fields = [
             'id', 'user', 'title', 'image', 'description',
-            'created_at', 'updated_at', 'details',
+            'details',
             'min_price', 'min_delivery_time', 'user_details'
         ]
     def validate(self, data):
@@ -51,14 +51,52 @@ class OfferSerializer(serializers.ModelSerializer):
             'username': obj.user.username
         }
 
+# class OfferListSerializer(serializers.ModelSerializer):
+#     details = OfferDetailSerializer(many=True, read_only=True)
+
+#     class Meta:
+#         model = Offer
+#         fields = [
+#             'id', 'title', 'image', 'description', 'details'
+#         ]
+
 class OfferListSerializer(serializers.ModelSerializer):
-    details = OfferDetailSerializer(many=True, read_only=True)
+    details = serializers.SerializerMethodField()
+    min_price = serializers.SerializerMethodField()
+    min_delivery_time = serializers.SerializerMethodField()
+    user_details = serializers.SerializerMethodField()
 
     class Meta:
         model = Offer
         fields = [
-            'id', 'title', 'image', 'description', 'details'
+            'id', 'user', 'title', 'image', 'description',
+            'created_at', 'updated_at', 'details',
+            'min_price', 'min_delivery_time', 'user_details'
         ]
+
+    def get_details(self, obj):
+        details = obj.details.all()
+        return [
+            {
+                'id': d.id,
+                'url': f"/offerdetails/{d.id}/"
+            } for d in details
+        ]
+
+    def get_min_price(self, obj):
+        return obj.details.aggregate(models.Min('price'))['price__min'] or 0
+
+    def get_min_delivery_time(self, obj):
+        return obj.details.aggregate(models.Min('delivery_time_in_days'))['delivery_time_in_days__min'] or 0
+
+    def get_user_details(self, obj):
+        user = obj.user
+        return {
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'username': user.username
+        }
+
 class OfferDetailLinkSerializer(serializers.ModelSerializer):
     url = serializers.SerializerMethodField()
 
@@ -72,17 +110,16 @@ class OfferDetailLinkSerializer(serializers.ModelSerializer):
 
 
 class OfferRetrieveSerializer(serializers.ModelSerializer):
-    # Ändere dies von OfferDetailLinkSerializer zu OfferDetailSerializer
-    details = OfferDetailSerializer(many=True, read_only=True)
+    # Ändere dies von OfferDetailSerializer zu OfferDetailLinkSerializer
+    details = OfferDetailLinkSerializer(many=True, read_only=True)
     min_price = serializers.SerializerMethodField()
     min_delivery_time = serializers.SerializerMethodField()
-    user_details = serializers.SerializerMethodField(read_only=True) # Füge dies hinzu, falls es im GET Response sein soll
 
     class Meta:
         model = Offer
         fields = [
-            'id', 'user', 'title', 'image', 'description',
-            'created_at', 'updated_at', 'details', 'min_price', 'min_delivery_time', 'user_details' # Füge user_details hinzu
+            'id', 'user', 'title', 'image', 'description', 'created_at', 'updated_at',
+            'details', 'min_price', 'min_delivery_time'
         ]
 
     def get_min_price(self, obj):
@@ -90,14 +127,6 @@ class OfferRetrieveSerializer(serializers.ModelSerializer):
 
     def get_min_delivery_time(self, obj):
         return obj.details.aggregate(models.Min('delivery_time_in_days'))['delivery_time_in_days__min'] or 0
-
-    # Füge diese Methode hinzu, da sie im OfferSerializer vorhanden ist und du sie vielleicht auch hier haben möchtest
-    def get_user_details(self, obj):
-        return {
-            'first_name': obj.user.first_name,
-            'last_name': obj.user.last_name,
-            'username': obj.user.username
-        }
     
 
 class OfferPatchSerializer(serializers.ModelSerializer):
@@ -118,33 +147,33 @@ class OfferPatchSerializer(serializers.ModelSerializer):
 
 
     def validate(self, data):
-        # Diese Validierung wird nur durchgeführt, wenn 'details' im PATCH-Payload enthalten ist.
-        if 'details' in data: # Prüfen, ob 'details' im validierten Daten-Dictionary ist
-            details = data.get('details')
-            if details is not None and len(details) < 3:
-                raise serializers.ValidationError({"details": "Ein Angebot muss mindestens 3 Details enthalten."})
+        if 'details' in self.initial_data:
+            details = self.initial_data.get('details', [])
+            if details is not None and len(details) < 1:
+                raise serializers.ValidationError({"details": "Ein Angebot muss mindestens 1 Detail enthalten."})
         return data
 
     def update(self, instance, validated_data):
-        # Hole die Details, falls sie im validated_data enthalten sind
         details_data = validated_data.pop('details', None)
 
-        # Aktualisiere die Hauptfelder des Angebots
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
 
-        # Wenn 'details' im Payload des PATCH-Requests gesendet wurde:
         if details_data is not None:
-            # Lösche alle bestehenden Details und erstelle neue aus den gesendeten Daten.
-            # Dies ist die einfachste Strategie für verschachtelte PATCH-Updates,
-            # bei der die gesendete Liste die bestehende vollständig ersetzt.
-            instance.details.all().delete()
-            for detail_data in details_data:
-                OfferDetail.objects.create(offer=instance, **detail_data)
-        # Beachten: Wenn 'details' NICHT im Payload ist, bleiben die bestehenden Details unverändert.
-        # Wenn 'details' explizit als leere Liste gesendet wird (z.B. "details": []),
-        # dann würde 'details_data' eine leere Liste sein und der Block würde die Details löschen.
+            for incoming_detail in details_data:
+                offer_type = incoming_detail.get('offer_type')
+                if not offer_type:
+                    continue  # skip if no offer_type is provided
+
+                try:
+                    detail_instance = instance.details.get(offer_type=offer_type)
+                except OfferDetail.DoesNotExist:
+                    continue  # or create a new one if desired
+
+                for attr, value in incoming_detail.items():
+                    setattr(detail_instance, attr, value)
+                detail_instance.save()
 
         return instance
 

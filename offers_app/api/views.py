@@ -3,16 +3,14 @@ from offers_app.models import Offer, OfferDetail
 # Importiere deine neuen Serializer
 from .serializers import OfferSerializer, OfferListSerializer, OfferRetrieveSerializer, OfferDetailSerializer, OfferPatchSerializer
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.pagination import PageNumberPagination
-from .permissions import IsBusinessUser, IsAuthenticated, IsOfferOwner
+from .permissions import IsBusinessOrReadOnly, IsAuthenticated, IsOfferOwner
+from .pagination import OffersResultPagination
 
-class OfferPagination(PageNumberPagination):
-    page_size_query_param = 'page_size'
 
 class OfferViewSet(viewsets.ModelViewSet):
     queryset = Offer.objects.all().order_by('-updated_at')
-    permission_classes = [IsBusinessUser]
-    pagination_class = OfferPagination
+    permission_classes = [IsBusinessOrReadOnly]
+    pagination_class = OffersResultPagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['details__delivery_time_in_days']
     search_fields = ['title', 'description']

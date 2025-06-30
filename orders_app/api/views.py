@@ -5,12 +5,18 @@ from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from orders_app.models import Order
 from .serializers import OrderCombinedSerializer, OrderStatusUpdateSerializer, OrderSerializer
+from .permissions import IsCustomerUser
 from django.contrib.auth.models import User
 
 
 class OrderViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     lookup_field = 'pk'
+
+    def get_permissions(self):
+        if self.action == 'create':
+            return [IsCustomerUser()]
+        return super().get_permissions()
 
     def get_queryset(self):
         user = self.request.user
@@ -50,14 +56,25 @@ class OrderViewSet(viewsets.ModelViewSet):
         combined_serializer = OrderCombinedSerializer(order)
         return Response(combined_serializer.data, status=200)
 
-    @action(detail=False, methods=['get'], url_path='order-count/(?P<business_user_id>[^/.]+)')
-    def order_count(self, request, business_user_id=None):
+
+
+# Separate APIViews for order counts
+from rest_framework.views import APIView
+from rest_framework.permissions import AllowAny
+
+class OrderCountView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request, business_user_id):
         user = get_object_or_404(User, pk=business_user_id)
         count = Order.objects.filter(offer__user=user, status='in_progress').count()
         return Response({'order_count': count}, status=200)
 
-    @action(detail=False, methods=['get'], url_path='completed-order-count/(?P<business_user_id>[^/.]+)')
-    def completed_order_count(self, request, business_user_id=None):
+
+class CompletedOrderCountView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request, business_user_id):
         user = get_object_or_404(User, pk=business_user_id)
         count = Order.objects.filter(offer__user=user, status='completed').count()
         return Response({'completed_order_count': count}, status=200)
