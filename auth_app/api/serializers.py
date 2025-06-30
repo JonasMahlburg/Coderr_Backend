@@ -1,3 +1,7 @@
+"""
+Serializers for handling user authentication, registration,
+and profile data within the auth_app.
+"""
 from rest_framework import serializers
 from auth_app.models import UserProfile
 from django.contrib.auth import authenticate
@@ -8,6 +12,9 @@ from rest_framework.response import Response
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
+    """
+    Serializer for full user profile data including contact details and file uploads.
+    """
 
     username = serializers.CharField(source='user.username', read_only=True, default='')
     first_name = serializers.CharField(source='user.first_name', allow_blank=True, default='')
@@ -51,6 +58,9 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
 
 class CustomerProfileSerializer(serializers.ModelSerializer):
+    """
+    Serializer for customer profile data (read-limited public fields).
+    """
     username = serializers.CharField(source='user.username', read_only=True, default='')
     first_name = serializers.CharField(source='user.first_name', allow_blank=True, default='')
     last_name = serializers.CharField(source='user.last_name', allow_blank=True, default='')
@@ -74,6 +84,9 @@ class CustomerProfileSerializer(serializers.ModelSerializer):
 
 
 class BusinessProfileSerializer(serializers.ModelSerializer):
+    """
+    Serializer for business profile data including contact and company details.
+    """
     username = serializers.CharField(source='user.username', read_only=True, default='')
     first_name = serializers.CharField(source='user.first_name', allow_blank=True, default='')
     last_name = serializers.CharField(source='user.last_name', allow_blank=True, default='')

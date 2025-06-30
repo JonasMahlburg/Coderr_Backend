@@ -1,3 +1,7 @@
+"""
+Serializers for offer and offer detail models including nested handling,
+read-only views, and update logic.
+"""
 from rest_framework import serializers
 from offers_app.models import Offer, OfferDetail
 from django.db import models
@@ -5,11 +9,19 @@ from django.contrib.auth.models import User
 
 # New OfferDetailSerializer for writable nested details
 class OfferDetailSerializer(serializers.ModelSerializer):
+    """
+    Serializer for full offer detail data used for nested input and output.
+    """
     class Meta:
         model = OfferDetail
         fields = ['id', 'title', 'revisions', 'delivery_time_in_days', 'price', 'features', 'offer_type']
 
+
 class OfferSerializer(serializers.ModelSerializer):
+    """
+    Serializer for creating an offer with nested offer details.
+    Includes validation and custom create method.
+    """
     details = OfferDetailSerializer(many=True)
     min_price = serializers.SerializerMethodField(read_only=True)
     min_delivery_time = serializers.SerializerMethodField(read_only=True)
@@ -51,16 +63,12 @@ class OfferSerializer(serializers.ModelSerializer):
             'username': obj.user.username
         }
 
-# class OfferListSerializer(serializers.ModelSerializer):
-#     details = OfferDetailSerializer(many=True, read_only=True)
-
-#     class Meta:
-#         model = Offer
-#         fields = [
-#             'id', 'title', 'image', 'description', 'details'
-#         ]
 
 class OfferListSerializer(serializers.ModelSerializer):
+    """
+    Serializer for listing offers with minimal detail and URL references.
+    Includes computed fields like min_price and user_details.
+    """
     details = serializers.SerializerMethodField()
     min_price = serializers.SerializerMethodField()
     min_delivery_time = serializers.SerializerMethodField()
@@ -98,6 +106,10 @@ class OfferListSerializer(serializers.ModelSerializer):
         }
 
 class OfferDetailLinkSerializer(serializers.ModelSerializer):
+    """
+    Serializer that returns only the ID and absolute URL for each offer detail.
+    Used in read-only offer views.
+    """
     url = serializers.SerializerMethodField()
 
     class Meta:
@@ -110,6 +122,10 @@ class OfferDetailLinkSerializer(serializers.ModelSerializer):
 
 
 class OfferRetrieveSerializer(serializers.ModelSerializer):
+    """
+    Serializer for retrieving a full offer with detail URLs and computed values.
+    Used in GET /offers/{id}/.
+    """
     # Ändere dies von OfferDetailSerializer zu OfferDetailLinkSerializer
     details = OfferDetailLinkSerializer(many=True, read_only=True)
     min_price = serializers.SerializerMethodField()
@@ -130,6 +146,10 @@ class OfferRetrieveSerializer(serializers.ModelSerializer):
     
 
 class OfferPatchSerializer(serializers.ModelSerializer):
+    """
+    Serializer for updating an offer partially.
+    Supports nested detail updates by offer_type.
+    """
 
     details = OfferDetailSerializer(many=True, required=False)
     min_price = serializers.SerializerMethodField(read_only=True)
@@ -144,7 +164,6 @@ class OfferPatchSerializer(serializers.ModelSerializer):
             'created_at', 'updated_at', 'details',
             'min_price', 'min_delivery_time', 'user_details'
         ]
-
 
     def validate(self, data):
         if 'details' in self.initial_data:
@@ -189,3 +208,4 @@ class OfferPatchSerializer(serializers.ModelSerializer):
             'last_name': obj.user.last_name,
             'username': obj.user.username
         }
+    

@@ -1,13 +1,22 @@
+"""
+API views for the overview_app providing general platform statistics
+such as review counts, average ratings, business profiles, and offers.
+"""
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.db.models import Avg
 from reviews_app.models import Review
-from offers_app.models import Offer  # ggf. anpassen
-from auth_app.models import UserProfile  # ggf. anpassen
+from offers_app.models import Offer 
+from auth_app.models import UserProfile 
 
 class BaseInfoAPIView(APIView):
-    permission_classes = []  # Kein Login nötig
+    """
+    APIView to retrieve general base information about the platform.
+    Provides counts of reviews, average rating, business profiles, and offers.
+    No authentication is required for access.
+    """
+    permission_classes = []
 
     def get(self, request):
         try:
