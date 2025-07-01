@@ -6,7 +6,7 @@ creating, updating orders and retrieving order counts.
 from rest_framework.views import APIView
 from rest_framework import viewsets
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from orders_app.models import Order
@@ -73,7 +73,7 @@ class OrderCountView(APIView):
     """
     APIView to retrieve count of orders in progress for a given business user.
     """
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, business_user_id):
         user = get_object_or_404(User, pk=business_user_id)
@@ -85,7 +85,7 @@ class CompletedOrderCountView(APIView):
     """
     APIView to retrieve count of completed orders for a given business user.
     """
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, business_user_id):
         user = get_object_or_404(User, pk=business_user_id)

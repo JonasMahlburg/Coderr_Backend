@@ -55,7 +55,6 @@ class UserProfileDetail(generics.RetrieveUpdateDestroyAPIView):
         """
         user_id = self.kwargs['pk']
         obj = generics.get_object_or_404(UserProfile, user__id=user_id)
-        # It's crucial to check object permissions here for security.
         self.check_object_permissions(self.request, obj)
         return obj
 
@@ -84,7 +83,6 @@ class RegistrationView(APIView):
                 'username': f"{saved_account.first_name} {saved_account.last_name}".strip(),
                 'email': saved_account.email,
                 'user_id': saved_account.id,
-                # 'type' : saved_account.userprofile.type
             }
             return Response(data, status=status.HTTP_201_CREATED)
         else:

@@ -8,24 +8,21 @@ from django.contrib.auth.models import User
 
 class BaseInfoAPITests(APITestCase):
     def setUp(self):
-        # Erstelle User + Profile
         user1 = User.objects.create(username="user1")
         user2 = User.objects.create(username="user2")
-        user3 = User.objects.create(username="user3")  # Neuer Reviewer
+        user3 = User.objects.create(username="user3")
 
         UserProfile.objects.create(user=user1, type="customer")
         UserProfile.objects.create(user=user2, type="business")
         UserProfile.objects.create(user=user3, type="customer")
 
-        # Erstelle Reviews
         Review.objects.create(business_user=user2, reviewer=user1, rating=4, description="Gut!")
         Review.objects.create(business_user=user2, reviewer=user3, rating=5, description="Top!")
 
-        # Erstelle Angebote
         Offer.objects.create(user=user2, title="Angebot 1", description="Test")
         Offer.objects.create(user=user2, title="Angebot 2", description="Test")
 
-        self.url = "/api/base-info/"  # oder reverse('base-info') falls du es geroutet hast
+        self.url = "/api/base-info/"
 
     def test_base_info_returns_correct_data(self):
         response = self.client.get(self.url)
@@ -42,7 +39,7 @@ class BaseInfoAPITests(APITestCase):
         self.assertEqual(response.data, expected)
 
     def test_base_info_accessible_without_authentication(self):
-        # Deauthentifiziere Client, falls ein Login vorliegt
-        self.client.credentials()  # entfernt Auth-Header
+        self.client.credentials()
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        

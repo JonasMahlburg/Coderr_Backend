@@ -7,7 +7,6 @@ from offers_app.models import Offer, OfferDetail
 from django.db import models
 from django.contrib.auth.models import User
 
-# New OfferDetailSerializer for writable nested details
 class OfferDetailSerializer(serializers.ModelSerializer):
     """
     Serializer for full offer detail data used for nested input and output.
@@ -36,7 +35,6 @@ class OfferSerializer(serializers.ModelSerializer):
             'min_price', 'min_delivery_time', 'user_details'
         ]
     def validate(self, data):
-        # Nur prüfen, wenn 'details' im Payload enthalten sind
         if 'details' in self.initial_data:
             details = data.get('details', None)
             if details is not None and len(details) < 3:
@@ -155,14 +153,14 @@ class OfferPatchSerializer(serializers.ModelSerializer):
     min_price = serializers.SerializerMethodField(read_only=True)
     min_delivery_time = serializers.SerializerMethodField(read_only=True)
     user_details = serializers.SerializerMethodField(read_only=True)
-    user = serializers.HiddenField(default=serializers.CurrentUserDefault()) # user bleibt hidden
+    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
 
     class Meta:
         model = Offer
         fields = [
             'id', 'user', 'title', 'image', 'description',
             'created_at', 'updated_at', 'details',
-            'min_price', 'min_delivery_time', 'user_details'
+            'min_price', 'min_delivery_time', 'user_details', 'offer_type'
         ]
 
     def validate(self, data):
@@ -183,12 +181,12 @@ class OfferPatchSerializer(serializers.ModelSerializer):
             for incoming_detail in details_data:
                 offer_type = incoming_detail.get('offer_type')
                 if not offer_type:
-                    continue  # skip if no offer_type is provided
+                    continue 
 
                 try:
                     detail_instance = instance.details.get(offer_type=offer_type)
                 except OfferDetail.DoesNotExist:
-                    continue  # or create a new one if desired
+                    continue 
 
                 for attr, value in incoming_detail.items():
                     setattr(detail_instance, attr, value)

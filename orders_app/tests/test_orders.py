@@ -1,7 +1,7 @@
 from django.urls import reverse
 from offers_app.models import Offer, OfferDetail
 from orders_app.models import Order
-from rest_framework.test import APITestCase, APIClient
+from rest_framework.test import APITestCase
 from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import User
 from auth_app.models import UserProfile
@@ -38,7 +38,6 @@ class OrdersAPITests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
     
     def test_post_order(self):
-        # Setup: Business erstellt ein Angebot + Detail
         from offers_app.models import Offer, OfferDetail
 
         offer = Offer.objects.create(
@@ -56,12 +55,10 @@ class OrdersAPITests(APITestCase):
             features=["Logo Design", "Visitenkarten"]
         )
 
-        # Authentifiziere als customer
-        self.token.delete()  # remove business token
+        self.token.delete()
         token = Token.objects.create(user=self.customer_user)
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token.key)
 
-        # Sende Bestellung
         url = reverse('order-list')
         data = {
             "offer_detail_id": detail.id
@@ -78,7 +75,6 @@ class OrdersAPITests(APITestCase):
     def test_patch_order_status_as_business_user(self):
 
 
-        # Erstelle ein Angebot und ein zugehöriges Detail
         offer = Offer.objects.create(
             user=self.business_user,
             title="Logo Design",
@@ -94,7 +90,6 @@ class OrdersAPITests(APITestCase):
             features=["Logo Design", "Visitenkarten"]
         )
 
-        # Erstelle eine Bestellung
         order = Order.objects.create(
             customer=self.customer_user,
             offer=offer,
@@ -103,7 +98,6 @@ class OrdersAPITests(APITestCase):
             status='in_progress'
         )
 
-        # Authentifiziere als Anbieter (business_user)
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token.key)
 
         url = reverse('order-detail', kwargs={'pk': order.id})
@@ -145,7 +139,6 @@ class OrdersAPITests(APITestCase):
     def test_get_order_count_for_business_user(self):
 
 
-    # Setup: Erstelle ein Angebot und ein Detail für den Business User
         offer = Offer.objects.create(
             user=self.business_user,
             title="Website Design",
@@ -161,7 +154,6 @@ class OrdersAPITests(APITestCase):
             features=["Webdesign", "Hosting", "Support"]
         )
 
-    # Erstelle 3 in_progress Bestellungen + 1 completed
         for order_status in ['in_progress', 'in_progress', 'in_progress', 'completed']:
             Order.objects.create(
                 customer=self.customer_user,
@@ -171,7 +163,6 @@ class OrdersAPITests(APITestCase):
                 status=order_status
             )
 
-    # Authentifiziere als beliebiger Benutzer (z.B. customer)
         token = Token.objects.create(user=self.customer_user)
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token.key)
 
@@ -184,7 +175,6 @@ class OrdersAPITests(APITestCase):
     def test_get_completed_order_count_for_business_user(self):
 
 
-        # Setup Angebot + Detail
         offer = Offer.objects.create(
             user=self.business_user,
             title="SEO Paket",
@@ -200,7 +190,6 @@ class OrdersAPITests(APITestCase):
             features=["OnPage", "OffPage"]
         )
 
-        # 2 completed + 1 in_progress
         for s in ['completed', 'completed', 'in_progress']:
             Order.objects.create(
                 customer=self.customer_user,
@@ -210,7 +199,6 @@ class OrdersAPITests(APITestCase):
                 status=s
             )
 
-        # Authentifiziere als beliebiger User
         token = Token.objects.create(user=self.customer_user)
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token.key)
 
@@ -219,3 +207,4 @@ class OrdersAPITests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['completed_order_count'], 2)
+        

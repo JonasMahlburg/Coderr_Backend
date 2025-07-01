@@ -6,8 +6,9 @@ from rest_framework import viewsets, mixins, filters
 from offers_app.models import Offer, OfferDetail
 from .serializers import OfferSerializer, OfferListSerializer, OfferRetrieveSerializer, OfferDetailSerializer, OfferPatchSerializer
 from django_filters.rest_framework import DjangoFilterBackend
-from .permissions import IsBusinessOrReadOnly, IsAuthenticated, IsOfferOwner
+from .permissions import IsBusinessOrReadOnly, IsOfferDetailOwnerOrReadOnly
 from .pagination import OffersResultPagination
+from .filters import OfferFilter
 
 
 class OfferViewSet(viewsets.ModelViewSet):
@@ -20,7 +21,7 @@ class OfferViewSet(viewsets.ModelViewSet):
     permission_classes = [IsBusinessOrReadOnly]
     pagination_class = OffersResultPagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['details__delivery_time_in_days']
+    filterset_class = OfferFilter
     search_fields = ['title', 'description']
     ordering_fields = ['updated_at', 'details__delivery_time_in_days']
 
@@ -37,12 +38,15 @@ class OfferViewSet(viewsets.ModelViewSet):
         serializer.save(user=self.request.user)
 
 
-class OfferDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
+class OfferDetailViewSet(mixins.RetrieveModelMixin,
+                         mixins.UpdateModelMixin,
+                         mixins.DestroyModelMixin,
+                         viewsets.GenericViewSet):
     """
-    ViewSet for retrieving individual OfferDetail objects.
-    Read-only access without any permissions applied.
+    ViewSet for retrieving, updating and deleting individual OfferDetail objects.
+    Only owners may update or delete; authenticated users may retrieve.
     """
     queryset = OfferDetail.objects.all()
     serializer_class = OfferDetailSerializer
-    permission_classes = []
-    
+    permission_classes = [IsOfferDetailOwnerOrReadOnly]
+    http_method_names = ['get', 'patch', 'delete']

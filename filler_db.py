@@ -11,13 +11,11 @@ from reviews_app.models import Review
 from offers_app.models import Offer, OfferDetail
 import random
 
-# Erst alle Daten löschen
 Order.objects.all().delete()
 Offer.objects.all().delete()
 UserProfile.objects.all().delete()
 User.objects.all().delete()
 
-# Business Accounts anlegen
 business_users = []
 for i in range(1, 6):
     user = User.objects.create_user(username=f'business{i}', email=f'business{i}@mail.com', password='testpass')
@@ -29,7 +27,6 @@ for i in range(1, 6):
     )
     business_users.append(business)
 
-    # Zwei Angebote pro Business
     for j, offer_type in enumerate(["basic", "premium"], start=1):
         offer = Offer.objects.create(
             user=business.user,
@@ -47,7 +44,6 @@ for i in range(1, 6):
             offer_type=offer_type
         )
 
-# Customer Accounts anlegen
 customer_users = []
 for i in range(1, 11):
     user = User.objects.create_user(username=f'customer{i}', email=f'customer{i}@mail.com', password='testpass')
@@ -60,7 +56,6 @@ for i in range(1, 11):
     customer_users.append(customer)
 
 
-# Bestellungen zufällig verteilen (jeder max. eine Bestellung)
 used_customers = set()
 for customer in customer_users:
     if random.choice([True, False]):
@@ -78,7 +73,6 @@ for customer in customer_users:
 
 print("Testdaten wurden erfolgreich erstellt.")
 
-# Reviews zufällig erstellen (nur von Kunden an Businesses, max. eine pro Kombination)
 created_reviews = set()
 for customer in customer_users:
     if random.choice([True, False]):
@@ -98,3 +92,4 @@ for customer in customer_users:
                 ])
             )
             created_reviews.add(key)
+            

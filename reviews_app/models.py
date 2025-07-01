@@ -52,7 +52,7 @@ class Review(models.Model):
             raise ValidationError("Nur Kunden mit Profil dürfen Bewertungen schreiben.")
 
     def save(self, *args, **kwargs):
-        self.full_clean()  # führt clean() automatisch aus
+        self.full_clean()
         super().save(*args, **kwargs)
 
     def __str__(self):

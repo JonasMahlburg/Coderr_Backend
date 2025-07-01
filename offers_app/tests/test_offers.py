@@ -4,6 +4,7 @@ from django.contrib.auth.models import User
 from auth_app.models import UserProfile
 from rest_framework import status
 from django.urls import reverse
+import copy
 
 
 class OffersAPITest(APITestCase):
@@ -69,7 +70,7 @@ class OffersAPITest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def test_get_offer_by_id(self):
-        # Erst ein Angebot erstellen
+  
         create_url = reverse('offer-list')
         offer_data = {
             "title": "Einzelabruf-Angebot",
@@ -105,14 +106,13 @@ class OffersAPITest(APITestCase):
         self.assertEqual(create_response.status_code, status.HTTP_201_CREATED)
         offer_id = create_response.data['id']
 
-        # Nun das erstellte Angebot über ID abrufen
         get_url = reverse('offer-detail', kwargs={'pk': offer_id})
         get_response = self.client.get(get_url)
         self.assertEqual(get_response.status_code, status.HTTP_200_OK)
         self.assertEqual(get_response.data['id'], offer_id)
 
     def test_patch_offer(self):
-        # 1. Angebot anlegen
+
         create_url = reverse('offer-list')
         offer_data = {
             "title": "Design-Paket",
@@ -147,24 +147,17 @@ class OffersAPITest(APITestCase):
         create_response = self.client.post(create_url, offer_data, format='json')
         self.assertEqual(create_response.status_code, status.HTTP_201_CREATED)
 
-        # 2. ID des erstellten Angebots holen
         offer_id = create_response.data['id']
-
-        # 3. PATCH-Daten vorbereiten
         patch_url = reverse('offer-detail', kwargs={'pk': offer_id})
         patch_data = {
             "description": "Neue, verbesserte Beschreibung"
         }
-
-        # 4. PATCH-Request senden
         patch_response = self.client.patch(patch_url, patch_data, format='json')
 
-        # 5. Ergebnis prüfen
         self.assertEqual(patch_response.status_code, status.HTTP_200_OK)
         self.assertEqual(patch_response.data['description'], "Neue, verbesserte Beschreibung")
 
     def test_delete_offer(self):
-        # 1. Angebot anlegen
         create_url = reverse('offer-list')
         offer_data = {
             "title": "Löschbares Angebot",
@@ -201,20 +194,15 @@ class OffersAPITest(APITestCase):
 
         offer_id = create_response.data['id']
         delete_url = reverse('offer-detail', kwargs={'pk': offer_id})
-
-        # 2. DELETE-Anfrage senden
         delete_response = self.client.delete(delete_url)
 
-        # 3. Ergebnis prüfen
         self.assertEqual(delete_response.status_code, status.HTTP_204_NO_CONTENT)
 
-        # 4. Sicherstellen, dass das Angebot wirklich weg ist
         get_response = self.client.get(delete_url)
         self.assertEqual(get_response.status_code, status.HTTP_404_NOT_FOUND)
 
 
     def test_get_offerdetail_by_id(self):
-        # Erst ein Angebot erstellen
         create_url = reverse('offer-list')
         offer_data = {
             "title": "Angebot mit Detailabruf",
@@ -256,3 +244,149 @@ class OffersAPITest(APITestCase):
         detail_response = self.client.get(detail_url)
         self.assertEqual(detail_response.status_code, status.HTTP_200_OK)
         self.assertEqual(detail_response.data['id'], detail_id)
+    
+    def test_offer_filtering_by_price_and_delivery(self):
+        """
+        Ensure offers can be filtered using min_price, max_price,
+        min_delivery and max_delivery query parameters.
+        """
+        create_url = reverse('offer-list')
+        offer_data = {
+            "title": "Filterbares Angebot",
+            "description": "Zum Testen von Preis- und Lieferzeit-Filtern.",
+            "details": [
+                {
+                    "title": "Günstig & Schnell",
+                    "revisions": 1,
+                    "delivery_time_in_days": 1,
+                    "price": 50.00,
+                    "features": "Basisleistung",
+                    "offer_type": "graphic"
+                },
+                {
+                    "title": "Mittel",
+                    "revisions": 2,
+                    "delivery_time_in_days": 3,
+                    "price": 150.00,
+                    "features": "Standardleistung",
+                    "offer_type": "digital"
+                },
+                {
+                    "title": "Teuer & Langsam",
+                    "revisions": 1,
+                    "delivery_time_in_days": 5,
+                    "price": 300.00,
+                    "features": "Premiumleistung",
+                    "offer_type": "print"
+                }
+            ]
+        }
+        create_response = self.client.post(create_url, offer_data, format='json')
+        self.assertEqual(create_response.status_code, status.HTTP_201_CREATED)
+
+        url = reverse('offer-list')
+
+        response_min_price = self.client.get(url + '?min_price=200')
+        self.assertEqual(response_min_price.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response_min_price.data['results']), 1)
+
+        response_max_price = self.client.get(url + '?max_price=100')
+        self.assertEqual(response_max_price.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response_max_price.data['results']), 1)
+
+        response_min_delivery = self.client.get(url + '?min_delivery=4')
+        self.assertEqual(response_min_delivery.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response_min_delivery.data['results']), 1)
+
+        response_max_delivery = self.client.get(url + '?max_delivery=2')
+        self.assertEqual(response_max_delivery.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response_max_delivery.data['results']), 1)
+        
+    def test_invalid_filter_values_return_400(self):
+        """
+        Ensure invalid filter values like non-numeric min_price or min_delivery
+        return a 400 Bad Request.
+        """
+        url = reverse('offer-list')
+
+        response_invalid_price = self.client.get(url + '?min_price=abc')
+        self.assertEqual(response_invalid_price.status_code, status.HTTP_400_BAD_REQUEST)
+
+        response_invalid_delivery = self.client.get(url + '?min_delivery=test')
+        self.assertEqual(response_invalid_delivery.status_code, status.HTTP_400_BAD_REQUEST)
+
+        response_multiple_invalid = self.client.get(url + '?min_price=abc&max_delivery=xyz')
+        self.assertEqual(response_multiple_invalid.status_code, status.HTTP_400_BAD_REQUEST)
+    
+    def test_offerdetail_permissions(self):
+        """
+        Ensure only the owner of the offer can update or delete OfferDetails.
+        Other authenticated users can read but not modify them.
+        """
+        create_url = reverse('offer-list')
+        base_offer_data = {
+            "title": "Testangebot",
+            "description": "Nur Besitzer darf ändern",
+            "details": [
+                {
+                    "title": "Detail A",
+                    "revisions": 1,
+                    "delivery_time_in_days": 2,
+                    "price": 50.00,
+                    "features": "Nur für den Ersteller editierbar",
+                    "offer_type": "graphic"
+                },
+                {
+                    "title": "Detail B",
+                    "revisions": 1,
+                    "delivery_time_in_days": 3,
+                    "price": 60.00,
+                    "features": "Zweites Feature",
+                    "offer_type": "digital"
+                },
+                {
+                    "title": "Detail C",
+                    "revisions": 1,
+                    "delivery_time_in_days": 1,
+                    "price": 70.00,
+                    "features": "Drittes Feature",
+                    "offer_type": "print"
+                }
+            ]
+        }
+        create_response = self.client.post(create_url, copy.deepcopy(base_offer_data), format='json')
+        self.assertEqual(create_response.status_code, status.HTTP_201_CREATED)
+        detail_id = create_response.data['details'][0]['id']
+        detail_url = reverse('offerdetail-detail', kwargs={'pk': detail_id})
+
+        patch_response = self.client.patch(detail_url, {'price': 60.00}, format='json')
+        self.assertEqual(patch_response.status_code, status.HTTP_200_OK)
+        self.assertAlmostEqual(float(patch_response.data['price']), 60.0)
+
+        delete_response = self.client.delete(detail_url)
+        self.assertEqual(delete_response.status_code, status.HTTP_204_NO_CONTENT)
+
+
+        offer_for_other_user = copy.deepcopy(base_offer_data)
+        offer_for_other_user["title"] = "Testangebot (Fremdzugriff-Test)"
+        
+        create_response = self.client.post(create_url, offer_for_other_user, format='json')
+        
+        if create_response.status_code != status.HTTP_201_CREATED:
+            print("API Validation Error:", create_response.data)
+
+        self.assertEqual(create_response.status_code, status.HTTP_201_CREATED)
+        detail_id = create_response.data['details'][0]['id']
+        detail_url = reverse('offerdetail-detail', kwargs={'pk': detail_id})
+
+        other_token = Token.objects.create(user=self.customer_user)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + other_token.key)
+
+        get_response = self.client.get(detail_url)
+        self.assertEqual(get_response.status_code, status.HTTP_200_OK)
+
+        patch_response = self.client.patch(detail_url, {'price': 70.00}, format='json')
+        self.assertEqual(patch_response.status_code, status.HTTP_403_FORBIDDEN)
+
+        delete_response = self.client.delete(detail_url)
+        self.assertEqual(delete_response.status_code, status.HTTP_403_FORBIDDEN)

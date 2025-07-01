@@ -1,7 +1,6 @@
 """
 Custom permission classes for offers_app to control access to offer-related views.
 """
-
 from rest_framework.permissions import BasePermission, IsAuthenticated, SAFE_METHODS
 
 
@@ -41,3 +40,17 @@ class IsBusinessOrReadOnly(BasePermission):
             hasattr(request.user, 'userprofile') and
             request.user.userprofile.type == 'business'
         )
+
+
+class IsOfferDetailOwnerOrReadOnly(BasePermission):
+    """
+    Permission class that allows read-only access to authenticated users,
+    but restricts write access to the owner of the related offer.
+    """
+
+    def has_object_permission(self, request, view, obj):
+
+        if request.method in SAFE_METHODS:
+            return request.user and request.user.is_authenticated
+
+        return obj.offer.user == request.user

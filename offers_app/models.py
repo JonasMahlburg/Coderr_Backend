@@ -31,5 +31,5 @@ class OfferDetail(models.Model):
     revisions = models.PositiveIntegerField()
     delivery_time_in_days = models.PositiveIntegerField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
-    features = models.JSONField(default=list)  # Liste von Strings
+    features = models.JSONField(default=list)
     offer_type = models.CharField(max_length=50)

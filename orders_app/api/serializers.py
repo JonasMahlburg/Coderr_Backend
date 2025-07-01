@@ -3,19 +3,18 @@ Serializers for orders_app that handle order creation, detail presentation,
 and status updates including nested offer and user data.
 """
 from rest_framework import serializers
-from orders_app.models import Order # Importiere das Order-Modell
-from offers_app.models import Offer, OfferDetail # Importiere die relevanten Offers-Modelle
-from offers_app.api.serializers import OfferDetailSerializer, OfferSerializer # Importiere deine bestehenden Serializer
+from orders_app.models import Order
+from offers_app.models import Offer, OfferDetail
+from offers_app.api.serializers import OfferDetailSerializer, OfferSerializer
 from django.contrib.auth.models import User
 
-# Optional: Ein einfacher Serializer für den User, falls du detaillierte User-Infos brauchst
 class UserSerializerForOrder(serializers.ModelSerializer):
     """
     Lightweight user serializer used to embed basic user data in order responses.
     """
     class Meta:
         model = User
-        fields = ['id', 'username', 'first_name', 'last_name'] # Wähle die Felder, die du anzeigen möchtest
+        fields = ['id', 'username', 'first_name', 'last_name'] 
 
 class OrderSerializer(serializers.ModelSerializer):
     """
@@ -55,7 +54,7 @@ class OrderSerializer(serializers.ModelSerializer):
             offer=offer,
             ordered_detail=offer_detail,
             price_at_order=price_at_order,
-            status='in_progress',  # 👈 Hier explizit setzen
+            status='in_progress',
             **validated_data
         )
         return order

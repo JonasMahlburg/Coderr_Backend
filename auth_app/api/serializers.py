@@ -10,7 +10,6 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 
 
-
 class UserProfileSerializer(serializers.ModelSerializer):
     """
     Serializer for full user profile data including contact details and file uploads.
@@ -154,13 +153,6 @@ Fields:
         
         if User.objects.filter(username=username).exists():
             raise serializers.ValidationError({'error': 'This username is already taken'})
-
-        # base_username = username.strip().replace(" ", "").lower()
-        # username = base_username
-        # counter = 1
-        # while User.objects.filter(username=username).exists():
-        #     username = f"{base_username}{counter}"
-        #     counter += 1
 
         names = username.split()
         first_name = names[0] if len(names) > 0 else ""

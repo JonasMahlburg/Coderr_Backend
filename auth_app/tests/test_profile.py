@@ -107,29 +107,9 @@ class AuthTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
-# class ProfileTests(APITestCase):
-#     def setUp(self):
-#         self.user = User.objects.create_user(username="Jonas", password="secret123")
-#         self.profile = UserProfile.objects.create(user=self.user, type="business")
-#         self.client.login(username="Jonas", password="secret123")
-
-#     def test_get_own_profile(self):
-#         response = self.client.get(f"/api/profile/{self.profile.pk}/")
-#         self.assertEqual(response.status_code, status.HTTP_200_OK)
-#         self.assertEqual(response.data["id"], self.profile.pk)
-
-#     def test_patch_profile(self):
-#         response = self.client.patch(f"/api/profile/{self.profile.pk}/", {
-#             "bio": "Updated bio"
-#         }, format="json")
-#         self.assertEqual(response.status_code, status.HTTP_200_OK)
-#         self.assertEqual(response.data["bio"], "Updated bio")
-
 class ProfileTests(APITestCase):
     def setUp(self):
         self.client = APIClient()
-
-        # 1. Create a user (and ensure unique data for robustness)
         self.username = f"testuser_{uuid.uuid4().hex[:8]}"
         self.email = f"test_{uuid.uuid4().hex[:8]}@example.com"
         self.password = "testpassword123"
@@ -139,21 +119,14 @@ class ProfileTests(APITestCase):
             password=self.password
         )
 
-        # 2. Create a UserProfile for this user (using 'type', not 'role')
-        # This fixes the TypeError you saw previously.
+
         self.profile = UserProfile.objects.create(user=self.user, type="business")
-
-        # 3. Obtain a token for the user
         self.token, created = Token.objects.get_or_create(user=self.user)
-
-        # 4. Authenticate the client with the token
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token.key)
-
-        # Base URL for profile details (using reverse for robustness)
         self.detail_url = f'/api/profile/{self.profile.pk}/'
 
     def test_get_own_profile(self):
-        # Now the client is authenticated, and the URL is correct
+
         response = self.client.get(self.detail_url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['username'], self.username)
@@ -162,10 +135,10 @@ class ProfileTests(APITestCase):
 
 
     def test_patch_profile(self):
-        # Ensure the client is authenticated and the user is the owner
+
         patch_data = {'location': 'New Test Location'}
         response = self.client.patch(self.detail_url, patch_data, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.profile.refresh_from_db() # Refresh the instance from the database
+        self.profile.refresh_from_db()
         self.assertEqual(self.profile.location, 'New Test Location')
 
