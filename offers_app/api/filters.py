@@ -1,37 +1,52 @@
+# offers_app/filters.py
 import django_filters
-from django.core.exceptions import ValidationError
+from django.db.models import Min # Dieser Import ist nicht streng notwendig, wenn wir hier nicht annotate() aufrufen
+from rest_framework.exceptions import ValidationError
 from offers_app.models import Offer
 
 class OfferFilter(django_filters.FilterSet):
-    """
-    FilterSet for Offer model that enables filtering by nested OfferDetail fields.
+    # Feldnamen müssen den GET-Parametern entsprechen
+    min_price = django_filters.NumberFilter(method='filter_min_price')
+    max_price = django_filters.NumberFilter(method='filter_max_price')
+    min_delivery = django_filters.NumberFilter(method='filter_min_delivery')
+    max_delivery = django_filters.NumberFilter(method='filter_max_delivery')
 
-    Allows the following query parameters:
-    - min_price: Filters offers with a minimum price (greater than or equal to).
-    - max_price: Filters offers with a maximum price (less than or equal to).
-    - min_delivery: Filters offers with a minimum delivery time in days (greater than or equal to).
-    - max_delivery: Filters offers with a maximum delivery time in days (less than or equal to).
-    """
+    def filter_min_price(self, queryset, name, value):
+        try:
+            float_value = float(value)
+        except ValueError:
+            raise ValidationError({'min_price': 'Must be a number'})
+        return queryset.filter(overall_min_price__gte=float_value)
 
-    min_price = django_filters.NumberFilter(
-        field_name='details__price', lookup_expr='gte'
-    )
-    max_price = django_filters.NumberFilter(
-        field_name='details__price', lookup_expr='lte'
-    )
-    min_delivery = django_filters.NumberFilter(
-        field_name='details__delivery_time_in_days', lookup_expr='gte'
-    )
-    max_delivery = django_filters.NumberFilter(
-        field_name='details__delivery_time_in_days', lookup_expr='lte'
-    )
+    def filter_max_price(self, queryset, name, value):
+        try:
+            float_value = float(value)
+        except ValueError:
+            raise ValidationError({'max_price': 'Must be a number'})
+        return queryset.filter(overall_min_price__lte=float_value)
+
+    def filter_min_delivery(self, queryset, name, value):
+        try:
+            int_value = int(value)
+        except ValueError:
+            raise ValidationError({'min_delivery': 'Must be an integer'})
+        return queryset.filter(overall_min_delivery_time__gte=int_value)
+
+    def filter_max_delivery(self, queryset, name, value):
+        try:
+            int_value = int(value)
+        except ValueError:
+            raise ValidationError({'max_delivery': 'Must be an integer'})
+        return queryset.filter(overall_min_delivery_time__lte=int_value)
 
     def __init__(self, *args, **kwargs):
         try:
             super().__init__(*args, **kwargs)
         except (TypeError, ValueError) as e:
+            # Wichtig: Stelle sicher, dass diese Fehlermeldung sichtbar ist, falls sie auftritt
+            print(f"DEBUG: OfferFilter initialization error: {e}")
             raise ValidationError({'detail': 'Invalid filter value: ' + str(e)})
 
     class Meta:
         model = Offer
-        fields = []
+        fields = [] # Bleibt leer, da wir alle Filter über Methoden definieren

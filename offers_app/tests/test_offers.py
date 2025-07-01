@@ -45,7 +45,7 @@ class OffersAPITest(APITestCase):
                     "revisions": 2,
                     "delivery_time_in_days": 3,
                     "price": 199.99,
-                    "features": "Individuelles Logo, 3 Entwürfe, 2 Überarbeitungen",
+                    "features": ["Individuelles Logo, 3 Entwürfe, 2 Überarbeitungen"],
                     "offer_type": "graphic"
                 },
                 {
@@ -53,7 +53,7 @@ class OffersAPITest(APITestCase):
                     "revisions": 1,
                     "delivery_time_in_days": 2,
                     "price": 99.99,
-                    "features": "Beidseitig, druckfertig",
+                    "features": ["Beidseitig, druckfertig"],
                     "offer_type": "print"
                 },
                 {
@@ -61,7 +61,7 @@ class OffersAPITest(APITestCase):
                     "revisions": 3,
                     "delivery_time_in_days": 4,
                     "price": 149.99,
-                    "features": "Instagram, Facebook Templates",
+                    "features": ["Instagram, Facebook Templates"],
                     "offer_type": "digital"
                 }
             ]
@@ -81,7 +81,7 @@ class OffersAPITest(APITestCase):
                     "revisions": 1,
                     "delivery_time_in_days": 2,
                     "price": 100.00,
-                    "features": "Ein Feature",
+                    "features": ["Ein Feature"],
                     "offer_type": "graphic"
                 },
                 {
@@ -89,7 +89,7 @@ class OffersAPITest(APITestCase):
                     "revisions": 2,
                     "delivery_time_in_days": 3,
                     "price": 150.00,
-                    "features": "Zwei Features",
+                    "features": ["Zwei Features"],
                     "offer_type": "digital"
                 },
                 {
@@ -97,7 +97,7 @@ class OffersAPITest(APITestCase):
                     "revisions": 1,
                     "delivery_time_in_days": 1,
                     "price": 75.00,
-                    "features": "Express Feature",
+                    "features": ["Express Feature"],
                     "offer_type": "print"
                 }
             ]
@@ -123,7 +123,7 @@ class OffersAPITest(APITestCase):
                     "revisions": 2,
                     "delivery_time_in_days": 3,
                     "price": 199.99,
-                    "features": "Logo mit Varianten",
+                    "features": ["Logo mit Varianten"],
                     "offer_type": "graphic"
                 },
                 {
@@ -131,7 +131,7 @@ class OffersAPITest(APITestCase):
                     "revisions": 1,
                     "delivery_time_in_days": 2,
                     "price": 99.99,
-                    "features": "Vorder- und Rückseite",
+                    "features": ["Vorder- und Rückseite"],
                     "offer_type": "print"
                 },
                 {
@@ -139,7 +139,7 @@ class OffersAPITest(APITestCase):
                     "revisions": 3,
                     "delivery_time_in_days": 4,
                     "price": 149.99,
-                    "features": "Templates für IG und FB",
+                    "features": ["Templates für IG und FB"],
                     "offer_type": "digital"
                 }
             ]
@@ -168,7 +168,7 @@ class OffersAPITest(APITestCase):
                     "revisions": 1,
                     "delivery_time_in_days": 2,
                     "price": 50.00,
-                    "features": "Basisleistung",
+                    "features": ["Basisleistung"],
                     "offer_type": "graphic"
                 },
                 {
@@ -176,7 +176,7 @@ class OffersAPITest(APITestCase):
                     "revisions": 2,
                     "delivery_time_in_days": 3,
                     "price": 75.00,
-                    "features": "Zusatzleistung",
+                    "features": ["Zusatzleistung"],
                     "offer_type": "digital"
                 },
                 {
@@ -184,7 +184,7 @@ class OffersAPITest(APITestCase):
                     "revisions": 1,
                     "delivery_time_in_days": 1,
                     "price": 30.00,
-                    "features": "Express",
+                    "features": ["Express"],
                     "offer_type": "print"
                 }
             ]
@@ -213,7 +213,7 @@ class OffersAPITest(APITestCase):
                     "revisions": 1,
                     "delivery_time_in_days": 2,
                     "price": 100.00,
-                    "features": "Test-Feature",
+                    "features": ["Test-Feature"],
                     "offer_type": "graphic"
                 },
                 {
@@ -221,7 +221,7 @@ class OffersAPITest(APITestCase):
                     "revisions": 1,
                     "delivery_time_in_days": 2,
                     "price": 110.00,
-                    "features": "Zweites Feature",
+                    "features": ["Zweites Feature"],
                     "offer_type": "digital"
                 },
                 {
@@ -229,7 +229,7 @@ class OffersAPITest(APITestCase):
                     "revisions": 1,
                     "delivery_time_in_days": 2,
                     "price": 120.00,
-                    "features": "Drittes Feature",
+                    "features": ["Drittes Feature"],
                     "offer_type": "print"
                 }
             ]
@@ -251,72 +251,120 @@ class OffersAPITest(APITestCase):
         min_delivery and max_delivery query parameters.
         """
         create_url = reverse('offer-list')
-        offer_data = {
-            "title": "Filterbares Angebot",
-            "description": "Zum Testen von Preis- und Lieferzeit-Filtern.",
+        # Erstelle zwei Angebote mit unterschiedlichen Preis- und Lieferzeiten
+        offer_data_cheap = {
+            "title": "Günstiges Angebot",
+            "description": "Zum Testen günstiger Preise.",
             "details": [
                 {
-                    "title": "Günstig & Schnell",
+                    "title": "Detail 1",
                     "revisions": 1,
                     "delivery_time_in_days": 1,
                     "price": 50.00,
-                    "features": "Basisleistung",
+                    "features": ["Basisleistung"],
                     "offer_type": "graphic"
                 },
                 {
-                    "title": "Mittel",
-                    "revisions": 2,
-                    "delivery_time_in_days": 3,
-                    "price": 150.00,
-                    "features": "Standardleistung",
+                    "title": "Detail 2",
+                    "revisions": 1,
+                    "delivery_time_in_days": 2,
+                    "price": 60.00,
+                    "features": ["Zweite Feature"],
                     "offer_type": "digital"
                 },
                 {
-                    "title": "Teuer & Langsam",
+                    "title": "Detail 3",
                     "revisions": 1,
-                    "delivery_time_in_days": 5,
-                    "price": 300.00,
-                    "features": "Premiumleistung",
+                    "delivery_time_in_days": 3,
+                    "price": 70.00,
+                    "features": ["Dritte Feature"],
                     "offer_type": "print"
                 }
             ]
         }
-        create_response = self.client.post(create_url, offer_data, format='json')
-        self.assertEqual(create_response.status_code, status.HTTP_201_CREATED)
+        offer_data_expensive = {
+        "title": "Teures Angebot",
+        "description": "Zum Testen hoher Preise.",
+        "details": [
+            {
+                "title": "Teuer & Langsam 1",
+                "revisions": 1,
+                "delivery_time_in_days": 5,
+                "price": 300.00,
+                "features": ["Premiumleistung 1"],
+                "offer_type": "print"
+            },
+            {
+                "title": "Teuer & Langsam 2",
+                "revisions": 2,
+                "delivery_time_in_days": 6,
+                "price": 350.00,
+                "features": ["Premiumleistung 2"],
+                "offer_type": "digital"
+            },
+            {
+                "title": "Teuer & Langsam 3",
+                "revisions": 1,
+                "delivery_time_in_days": 7,
+                "price": 400.00,
+                "features": ["Premiumleistung 3"],
+                "offer_type": "graphic"
+            }
+        ]
+    }
+        # Angebote erstellen
+        response1 = self.client.post(create_url, offer_data_cheap, format='json')
+        if response1.status_code != status.HTTP_201_CREATED:
+            print("Validation error for cheap offer:", response1.data)
+        self.assertEqual(response1.status_code, status.HTTP_201_CREATED)
+
+        response2 = self.client.post(create_url, offer_data_expensive, format='json')
+        self.assertEqual(response2.status_code, status.HTTP_201_CREATED)
 
         url = reverse('offer-list')
 
+        # Filter min_price=200 sollte nur das teure Angebot zurückgeben
         response_min_price = self.client.get(url + '?min_price=200')
         self.assertEqual(response_min_price.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response_min_price.data['results']), 1)
+        self.assertEqual(response_min_price.data['results'][0]['title'], "Teures Angebot")
 
+        # Filter max_price=100 sollte nur das günstige Angebot zurückgeben
         response_max_price = self.client.get(url + '?max_price=100')
         self.assertEqual(response_max_price.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response_max_price.data['results']), 1)
+        self.assertEqual(response_max_price.data['results'][0]['title'], "Günstiges Angebot")
 
+        # Filter min_delivery=4 sollte nur das teure Angebot zurückgeben
         response_min_delivery = self.client.get(url + '?min_delivery=4')
         self.assertEqual(response_min_delivery.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response_min_delivery.data['results']), 1)
+        self.assertEqual(response_min_delivery.data['results'][0]['title'], "Teures Angebot")
 
+        # Filter max_delivery=2 sollte nur das günstige Angebot zurückgeben
         response_max_delivery = self.client.get(url + '?max_delivery=2')
         self.assertEqual(response_max_delivery.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response_max_delivery.data['results']), 1)
+        self.assertEqual(response_max_delivery.data['results'][0]['title'], "Günstiges Angebot")
         
     def test_invalid_filter_values_return_400(self):
         """
-        Ensure invalid filter values like non-numeric min_price or min_delivery
-        return a 400 Bad Request.
+        Ensure invalid filter values return a 400 Bad Request.
         """
         url = reverse('offer-list')
 
         response_invalid_price = self.client.get(url + '?min_price=abc')
         self.assertEqual(response_invalid_price.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('min_price', response_invalid_price.data)
 
         response_invalid_delivery = self.client.get(url + '?min_delivery=test')
         self.assertEqual(response_invalid_delivery.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('min_delivery', response_invalid_delivery.data)
 
         response_multiple_invalid = self.client.get(url + '?min_price=abc&max_delivery=xyz')
         self.assertEqual(response_multiple_invalid.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('min_price', response_multiple_invalid.data)
+        self.assertIn('max_delivery', response_multiple_invalid.data)
     
     def test_offerdetail_permissions(self):
         """
@@ -333,7 +381,7 @@ class OffersAPITest(APITestCase):
                     "revisions": 1,
                     "delivery_time_in_days": 2,
                     "price": 50.00,
-                    "features": "Nur für den Ersteller editierbar",
+                    "features": ["Nur für den Ersteller editierbar"],
                     "offer_type": "graphic"
                 },
                 {
@@ -341,7 +389,7 @@ class OffersAPITest(APITestCase):
                     "revisions": 1,
                     "delivery_time_in_days": 3,
                     "price": 60.00,
-                    "features": "Zweites Feature",
+                    "features": ["Zweites Feature"],
                     "offer_type": "digital"
                 },
                 {
@@ -349,7 +397,7 @@ class OffersAPITest(APITestCase):
                     "revisions": 1,
                     "delivery_time_in_days": 1,
                     "price": 70.00,
-                    "features": "Drittes Feature",
+                    "features": ["Drittes Feature"],
                     "offer_type": "print"
                 }
             ]

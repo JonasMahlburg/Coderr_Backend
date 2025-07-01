@@ -1,29 +1,17 @@
-"""
-Serializers for offer and offer detail models including nested handling,
-read-only views, and update logic.
-"""
+# offers_app/serializers.py
 from rest_framework import serializers
 from offers_app.models import Offer, OfferDetail
-from django.db import models
-from django.contrib.auth.models import User
 
 class OfferDetailSerializer(serializers.ModelSerializer):
-    """
-    Serializer for full offer detail data used for nested input and output.
-    """
     class Meta:
         model = OfferDetail
         fields = ['id', 'title', 'revisions', 'delivery_time_in_days', 'price', 'features', 'offer_type']
 
 
 class OfferSerializer(serializers.ModelSerializer):
-    """
-    Serializer for creating an offer with nested offer details.
-    Includes validation and custom create method.
-    """
     details = OfferDetailSerializer(many=True)
-    min_price = serializers.SerializerMethodField(read_only=True)
-    min_delivery_time = serializers.SerializerMethodField(read_only=True)
+    min_price = serializers.DecimalField(max_digits=10, decimal_places=2, source='overall_min_price', read_only=True)
+    min_delivery_time = serializers.IntegerField(source='overall_min_delivery_time', read_only=True)
     user_details = serializers.SerializerMethodField(read_only=True)
     user = serializers.HiddenField(default=serializers.CurrentUserDefault())
 
@@ -48,12 +36,6 @@ class OfferSerializer(serializers.ModelSerializer):
             OfferDetail.objects.create(offer=offer, **detail)
         return offer
 
-    def get_min_price(self, obj):
-        return obj.details.aggregate(models.Min('price'))['price__min'] or 0
-
-    def get_min_delivery_time(self, obj):
-        return obj.details.aggregate(models.Min('delivery_time_in_days'))['delivery_time_in_days__min'] or 0
-
     def get_user_details(self, obj):
         return {
             'first_name': obj.user.first_name,
@@ -63,13 +45,9 @@ class OfferSerializer(serializers.ModelSerializer):
 
 
 class OfferListSerializer(serializers.ModelSerializer):
-    """
-    Serializer for listing offers with minimal detail and URL references.
-    Includes computed fields like min_price and user_details.
-    """
     details = serializers.SerializerMethodField()
-    min_price = serializers.SerializerMethodField()
-    min_delivery_time = serializers.SerializerMethodField()
+    min_price = serializers.DecimalField(max_digits=10, decimal_places=2, source='overall_min_price', read_only=True)
+    min_delivery_time = serializers.IntegerField(source='overall_min_delivery_time', read_only=True)
     user_details = serializers.SerializerMethodField()
 
     class Meta:
@@ -89,12 +67,6 @@ class OfferListSerializer(serializers.ModelSerializer):
             } for d in details
         ]
 
-    def get_min_price(self, obj):
-        return obj.details.aggregate(models.Min('price'))['price__min'] or 0
-
-    def get_min_delivery_time(self, obj):
-        return obj.details.aggregate(models.Min('delivery_time_in_days'))['delivery_time_in_days__min'] or 0
-
     def get_user_details(self, obj):
         user = obj.user
         return {
@@ -104,10 +76,6 @@ class OfferListSerializer(serializers.ModelSerializer):
         }
 
 class OfferDetailLinkSerializer(serializers.ModelSerializer):
-    """
-    Serializer that returns only the ID and absolute URL for each offer detail.
-    Used in read-only offer views.
-    """
     url = serializers.SerializerMethodField()
 
     class Meta:
@@ -120,14 +88,9 @@ class OfferDetailLinkSerializer(serializers.ModelSerializer):
 
 
 class OfferRetrieveSerializer(serializers.ModelSerializer):
-    """
-    Serializer for retrieving a full offer with detail URLs and computed values.
-    Used in GET /offers/{id}/.
-    """
-    # Ändere dies von OfferDetailSerializer zu OfferDetailLinkSerializer
     details = OfferDetailLinkSerializer(many=True, read_only=True)
-    min_price = serializers.SerializerMethodField()
-    min_delivery_time = serializers.SerializerMethodField()
+    min_price = serializers.DecimalField(max_digits=10, decimal_places=2, source='overall_min_price', read_only=True)
+    min_delivery_time = serializers.IntegerField(source='overall_min_delivery_time', read_only=True)
 
     class Meta:
         model = Offer
@@ -136,22 +99,11 @@ class OfferRetrieveSerializer(serializers.ModelSerializer):
             'details', 'min_price', 'min_delivery_time'
         ]
 
-    def get_min_price(self, obj):
-        return obj.details.aggregate(models.Min('price'))['price__min'] or 0
-
-    def get_min_delivery_time(self, obj):
-        return obj.details.aggregate(models.Min('delivery_time_in_days'))['delivery_time_in_days__min'] or 0
-    
 
 class OfferPatchSerializer(serializers.ModelSerializer):
-    """
-    Serializer for updating an offer partially.
-    Supports nested detail updates by offer_type.
-    """
-
     details = OfferDetailSerializer(many=True, required=False)
-    min_price = serializers.SerializerMethodField(read_only=True)
-    min_delivery_time = serializers.SerializerMethodField(read_only=True)
+    min_price = serializers.DecimalField(max_digits=10, decimal_places=2, source='overall_min_price', read_only=True)
+    min_delivery_time = serializers.IntegerField(source='overall_min_delivery_time', read_only=True)
     user_details = serializers.SerializerMethodField(read_only=True)
     user = serializers.HiddenField(default=serializers.CurrentUserDefault())
 
@@ -181,12 +133,12 @@ class OfferPatchSerializer(serializers.ModelSerializer):
             for incoming_detail in details_data:
                 offer_type = incoming_detail.get('offer_type')
                 if not offer_type:
-                    continue 
+                    continue
 
                 try:
                     detail_instance = instance.details.get(offer_type=offer_type)
                 except OfferDetail.DoesNotExist:
-                    continue 
+                    continue
 
                 for attr, value in incoming_detail.items():
                     setattr(detail_instance, attr, value)
@@ -194,16 +146,9 @@ class OfferPatchSerializer(serializers.ModelSerializer):
 
         return instance
 
-    def get_min_price(self, obj):
-        return obj.details.aggregate(models.Min('price'))['price__min'] or 0
-
-    def get_min_delivery_time(self, obj):
-        return obj.details.aggregate(models.Min('delivery_time_in_days'))['delivery_time_in_days__min'] or 0
-
     def get_user_details(self, obj):
         return {
             'first_name': obj.user.first_name,
             'last_name': obj.user.last_name,
             'username': obj.user.username
         }
-    
