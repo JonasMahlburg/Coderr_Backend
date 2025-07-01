@@ -1,9 +1,9 @@
 from rest_framework.permissions import BasePermission
 
-class IsCustomerAndNotReviewedBefore(BasePermission):
+class IsCustomerAndAuthenticated(BasePermission):
     """
-    Allows only authenticated users with a customer profile to create reviews.
-    Additionally, the user may not have already reviewed the specified business profile.
+    Allows only authenticated users with a customer profile.
+    Does NOT check for duplicate reviews here.
     Only the creator of the review can edit or delete it.
     All authenticated users can read reviews.
     """
@@ -19,11 +19,7 @@ class IsCustomerAndNotReviewedBefore(BasePermission):
                 return False
             if request.user.userprofile.type != 'customer':
                 return False
-            business_user_id = request.data.get('business_user')
-            if business_user_id:
-                from reviews_app.models import Review
-                if Review.objects.filter(reviewer=request.user, business_user_id=business_user_id).exists():
-                    return False
+            # No duplicate review check here; validation layer handles this.
             return True
 
         return request.user and request.user.is_authenticated

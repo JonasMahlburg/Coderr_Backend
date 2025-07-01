@@ -28,15 +28,20 @@ class IsOfferOwner(BasePermission):
 
 class IsBusinessOrReadOnly(BasePermission):
     """
-    Permission class that allows read-only access for everyone,
-    but restricts write access to authenticated users of type 'business'.
+    Permission that allows read and write access only to authenticated users.
+    Write access is restricted to users with profile type 'business'.
     """
+
     def has_permission(self, request, view):
+        if not (request.user and request.user.is_authenticated):
+            return False  # Lesen nur für authentifizierte Nutzer
+        
         if request.method in SAFE_METHODS:
+            # Alle authentifizierten Nutzer dürfen lesen
             return True
-        return bool(
-            request.user and
-            request.user.is_authenticated and
+        
+        # Schreiben nur für business-User
+        return (
             hasattr(request.user, 'userprofile') and
             request.user.userprofile.type == 'business'
         )
