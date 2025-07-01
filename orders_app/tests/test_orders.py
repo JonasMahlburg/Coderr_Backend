@@ -166,7 +166,7 @@ class OrdersAPITests(APITestCase):
         token = Token.objects.create(user=self.customer_user)
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token.key)
 
-        url = reverse('order-order-count', kwargs={'business_user_id': self.business_user.id})
+        url = f'/api/order-count/{self.business_user.id}/'
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -202,7 +202,7 @@ class OrdersAPITests(APITestCase):
         token = Token.objects.create(user=self.customer_user)
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token.key)
 
-        url = reverse('order-completed-order-count', kwargs={'business_user_id': self.business_user.id})
+        url = f'/api/completed-order-count/{self.business_user.id}/'
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)

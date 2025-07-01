@@ -2,18 +2,137 @@ from django.contrib import admin
 from .models import Offer, OfferDetail
 
 class OfferDetailInline(admin.TabularInline):
+    """
+    Allows editing OfferDetail instances directly within the Offer's admin page.
+    Uses TabularInline for a compact table format.
+    """
     model = OfferDetail
-    extra = 1
+    extra = 1 
+    fields = (
+        'title',
+        'description',
+        'price',
+        'revisions',
+        'delivery_time_in_days',
+        'offer_type'
+    )
+
 
 @admin.register(Offer)
 class OfferAdmin(admin.ModelAdmin):
-    list_display = ('title', 'user', 'offer_type', 'created_at', 'updated_at')
-    list_filter = ('offer_type', 'created_at', 'updated_at')
-    search_fields = ('title', 'description', 'user__username')
+    """
+    Admin configuration for the Offer model.
+    Organizes display, filtering, searching, and inlines for better usability.
+    """
+    list_display = (
+        'title',
+        'user',
+        'offer_type',
+        'display_detail_count',
+        'created_at',
+        'updated_at'
+    )
+
+    list_filter = (
+        'offer_type',
+        'created_at',
+        'updated_at'
+    )
+
+    search_fields = (
+        'title',
+        'description', 
+        'user__username'
+    )
+
+    ordering = ('-created_at',)
+
+    fieldsets = (
+        (None, { 
+            'fields': ('user', 'title', 'description', 'offer_type'),
+            'description': 'Main information about the offer.'
+        }),
+        ('Timestamps', { 
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',),
+            'description': 'Automatically recorded dates and times.'
+        }),
+    )
+
+    readonly_fields = (
+        'created_at',
+        'updated_at'
+    )
+
     inlines = [OfferDetailInline]
+
+    def display_detail_count(self, obj):
+        """
+        Calculates and displays the number of OfferDetails associated with this Offer.
+        """
+        return obj.offerdetail_set.count()
+    display_detail_count.short_description = 'Details'
+
+    def changelist_view(self, request, extra_context=None):
+        extra_context = extra_context or {}
+        extra_context['title'] = 'Manage Offers'
+        return super().changelist_view(request, extra_context=extra_context)
 
 @admin.register(OfferDetail)
 class OfferDetailAdmin(admin.ModelAdmin):
-    list_display = ('title', 'offer', 'price', 'revisions', 'delivery_time_in_days', 'offer_type')
-    list_filter = ('offer_type',)
-    search_fields = ('title', 'offer__title')
+    """
+    Admin configuration for the OfferDetail model.
+    Optimized for display and search. Note: Often managed via OfferInline.
+    """
+    list_display = (
+        'title',
+        'offer',
+        'price',
+        'revisions',
+        'delivery_time_in_days',
+        'offer_type',
+        'created_at', 
+        'updated_at'  
+    )
+
+    list_filter = (
+        'offer_type',
+        'price',
+        'revisions', 
+        'created_at',
+        'updated_at'
+    )
+
+    search_fields = (
+        'title',
+        'description',
+        'offer__title'
+    )
+
+    ordering = ('offer__title', 'title') 
+
+    fieldsets = (
+        (None, { 
+            'fields': ('offer', 'title', 'description', 'offer_type'),
+            'description': 'Core information for this specific offer detail.'
+        }),
+        ('Pricing & Delivery', {
+            'fields': ('price', 'revisions', 'delivery_time_in_days'),
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',),
+            'description': 'Record of creation and last modification.'
+        }),
+    )
+
+    readonly_fields = (
+        'created_at',
+        'updated_at'
+    )
+
+
+    def changelist_view(self, request, extra_context=None):
+        extra_context = extra_context or {}
+        extra_context['title'] = 'Manage Offer Details'
+        return super().changelist_view(request, extra_context=extra_context)
