@@ -34,13 +34,12 @@ class IsBusinessOrReadOnly(BasePermission):
 
     def has_permission(self, request, view):
         if not (request.user and request.user.is_authenticated):
-            return False  # Lesen nur für authentifizierte Nutzer
+            return False  
         
         if request.method in SAFE_METHODS:
-            # Alle authentifizierten Nutzer dürfen lesen
+        
             return True
         
-        # Schreiben nur für business-User
         return (
             hasattr(request.user, 'userprofile') and
             request.user.userprofile.type == 'business'

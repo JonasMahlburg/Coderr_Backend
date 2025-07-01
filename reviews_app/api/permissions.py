@@ -19,7 +19,7 @@ class IsCustomerAndAuthenticated(BasePermission):
                 return False
             if request.user.userprofile.type != 'customer':
                 return False
-            # No duplicate review check here; validation layer handles this.
+       
             return True
 
         return request.user and request.user.is_authenticated

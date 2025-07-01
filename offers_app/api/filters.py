@@ -1,11 +1,10 @@
 # offers_app/filters.py
 import django_filters
-from django.db.models import Min # Dieser Import ist nicht streng notwendig, wenn wir hier nicht annotate() aufrufen
 from rest_framework.exceptions import ValidationError
 from offers_app.models import Offer
 
 class OfferFilter(django_filters.FilterSet):
-    # Feldnamen müssen den GET-Parametern entsprechen
+ 
     min_price = django_filters.NumberFilter(method='filter_min_price')
     max_price = django_filters.NumberFilter(method='filter_max_price')
     min_delivery = django_filters.NumberFilter(method='filter_min_delivery')
@@ -43,10 +42,10 @@ class OfferFilter(django_filters.FilterSet):
         try:
             super().__init__(*args, **kwargs)
         except (TypeError, ValueError) as e:
-            # Wichtig: Stelle sicher, dass diese Fehlermeldung sichtbar ist, falls sie auftritt
+         
             print(f"DEBUG: OfferFilter initialization error: {e}")
             raise ValidationError({'detail': 'Invalid filter value: ' + str(e)})
 
     class Meta:
         model = Offer
-        fields = [] # Bleibt leer, da wir alle Filter über Methoden definieren
+        fields = []
