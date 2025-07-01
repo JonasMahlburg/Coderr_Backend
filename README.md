@@ -5,10 +5,9 @@ This repository contains the backend services for the Coderr application. It is 
 ## Features
 
 - RESTful API endpoints for user and project management
-- Authentication and authorization using JWT
-- Integration with a PostgreSQL database
+- Authentication and authorization using Token Authentication
+- Integration with a SQLite database
 - Comprehensive logging and error handling
-- Docker support for easy deployment
 - File upload support for user profiles and offers (media handling)
 - Pagination, filtering, and searching for efficient data access
 
@@ -19,8 +18,8 @@ This repository contains the backend services for the Coderr application. It is 
 - Python 3.11+
 - Django 4.x
 - Django REST Framework
-- PostgreSQL database
-- Docker (optional, for containerized deployment)
+- SQLite database
+
 
 ### Installation
 
@@ -97,7 +96,7 @@ This repository contains the backend services for the Coderr application. It is 
 ### API Documentation
 
 - API is RESTful and built using Django REST Framework.
-- Supports JWT authentication.
+- Supports Token authentication.
 - API documentation is accessible at `/api-docs/` when the server is running.
 
 ### Testing
