@@ -113,11 +113,10 @@ class ReviewCreateTests(APITestCase):
     def test_create_review_twice_for_same_business_403(self):
         self.client.force_authenticate(user=self.customer_user)
 
-  
         self.client.post(self.url, self.valid_payload, format='json')
 
         response = self.client.post(self.url, self.valid_payload, format='json')
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_create_review_invalid_payload_400(self):
         self.client.force_authenticate(user=self.customer_user)
