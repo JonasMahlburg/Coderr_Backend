@@ -10,7 +10,7 @@ from reviews_app.models import Review
 from reviews_app.api.serializers import ReviewSerializer
 from django.core.exceptions import ValidationError
 from rest_framework.exceptions import ValidationError as DRFValidationError
-from .permissions import IsCustomerAndNotReviewedBefore
+from .permissions import IsCustomerAndAuthenticated
 
 
 
@@ -22,7 +22,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
     """
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
-    permission_classes = [IsCustomerAndNotReviewedBefore]
+    permission_classes = [IsCustomerAndAuthenticated]
 
     def perform_create(self, serializer):
         try:
