@@ -46,15 +46,12 @@ class IsBusinessOrReadOnly(BasePermission):
         )
 
 
-class IsOfferDetailOwnerOrReadOnly(BasePermission):
+class IsOfferOwnerOrReadOnly(BasePermission):
     """
-    Permission class that allows read-only access to authenticated users,
-    but restricts write access to the owner of the related offer.
+    Object-level permission to allow only the owner of the offer to edit or delete it.
+    Read permissions are allowed to any request.
     """
-
     def has_object_permission(self, request, view, obj):
-
         if request.method in SAFE_METHODS:
-            return request.user and request.user.is_authenticated
-
-        return obj.offer.user == request.user
+            return True
+        return obj.user == request.user

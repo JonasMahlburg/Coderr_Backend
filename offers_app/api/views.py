@@ -1,10 +1,11 @@
 # offers_app/views.py
-# offers_app/views.py
+import django_filters
 from rest_framework import viewsets, mixins, filters
 from offers_app.models import Offer, OfferDetail
 from .serializers import OfferSerializer, OfferListSerializer, OfferRetrieveSerializer, OfferPatchSerializer, OfferDetailSerializer
 from django_filters.rest_framework import DjangoFilterBackend
-from .permissions import IsBusinessOrReadOnly, IsOfferDetailOwnerOrReadOnly
+from rest_framework.permissions import IsAuthenticated
+from .permissions import IsBusinessOrReadOnly, IsOfferOwnerOrReadOnly
 from .pagination import OffersResultPagination
 from .filters import OfferFilter
 from django.db.models import Min # Importiere Min
@@ -16,20 +17,21 @@ class OfferViewSet(viewsets.ModelViewSet):
     Supports list, create, retrieve, update, and delete operations.
     Applies filtering, searching, and pagination for offer listings.
     """
-    # Queryset wird in get_queryset annotiert
+    queryset = Offer.objects.all()
+
     def get_queryset(self):
         return Offer.objects.annotate(
             overall_min_price=Min('details__price'),
             overall_min_delivery_time=Min('details__delivery_time_in_days')
-        ).order_by('-updated_at')
+        ).distinct().order_by('-updated_at')
 
-    permission_classes = [IsBusinessOrReadOnly]
+    permission_classes = [IsBusinessOrReadOnly, IsOfferOwnerOrReadOnly]
     pagination_class = OffersResultPagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_class = OfferFilter
     search_fields = ['title', 'description']
-    # Ordering auf annotierte Felder
     ordering_fields = ['updated_at', 'overall_min_price', 'overall_min_delivery_time']
+    ordering = ['-updated_at']
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -43,6 +45,21 @@ class OfferViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
+    def list(self, request, *args, **kwargs):
+        try:
+            queryset = self.filter_queryset(self.get_queryset())
+        except (django_filters.exceptions.FieldLookupError, ValueError):
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError({"detail": "Invalid filter parameter."})
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
 
 class OfferDetailViewSet(mixins.RetrieveModelMixin,
                          mixins.UpdateModelMixin,
@@ -50,5 +67,5 @@ class OfferDetailViewSet(mixins.RetrieveModelMixin,
                          viewsets.GenericViewSet):
     queryset = OfferDetail.objects.all()
     serializer_class = OfferDetailSerializer
-    permission_classes = [IsOfferDetailOwnerOrReadOnly]
+    permission_classes = [IsAuthenticated]
     http_method_names = ['get', 'patch', 'delete']
