@@ -133,7 +133,7 @@ class OfferPatchSerializer(serializers.ModelSerializer):
             for incoming_detail in details_data:
                 offer_type = incoming_detail.get('offer_type')
                 if not offer_type:
-                    continue
+                    raise serializers.ValidationError({"offer_type": "Offer type is required for each detail in PATCH."})
 
                 try:
                     detail_instance = instance.details.get(offer_type=offer_type)

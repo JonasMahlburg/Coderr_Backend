@@ -28,19 +28,19 @@ class IsOfferOwner(BasePermission):
 
 class IsBusinessOrReadOnly(BasePermission):
     """
-    Permission that allows read and write access only to authenticated users.
-    Write access is restricted to users with profile type 'business'.
+    Permission that allows unrestricted read access.
+    Write access is restricted to authenticated users with profile type 'business'.
     """
 
     def has_permission(self, request, view):
-        if not (request.user and request.user.is_authenticated):
-            return False  
-        
         if request.method in SAFE_METHODS:
-        
-            return True
-        
+            if hasattr(view, 'action') and view.action == 'retrieve':
+                return request.user and request.user.is_authenticated
+            return True  # Allow all users to list offers
+
         return (
+            request.user and
+            request.user.is_authenticated and
             hasattr(request.user, 'userprofile') and
             request.user.userprofile.type == 'business'
         )
