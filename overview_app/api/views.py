@@ -9,6 +9,7 @@ from django.db.models import Avg
 from reviews_app.models import Review
 from offers_app.models import Offer 
 from auth_app.models import UserProfile 
+from rest_framework.permissions import AllowAny
 
 class BaseInfoAPIView(APIView):
     """
@@ -16,7 +17,8 @@ class BaseInfoAPIView(APIView):
     Provides counts of reviews, average rating, business profiles, and offers.
     No authentication is required for access.
     """
-    permission_classes = []
+    permission_classes = [AllowAny]
+    authentication_classes = []
 
     def get(self, request):
         try:
