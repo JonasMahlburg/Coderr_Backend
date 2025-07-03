@@ -1,4 +1,4 @@
-# offers_app/views.py
+from rest_framework.response import Response
 import django_filters
 from rest_framework import viewsets, mixins, filters
 from offers_app.models import Offer, OfferDetail
@@ -47,7 +47,22 @@ class OfferViewSet(viewsets.ModelViewSet):
         serializer.save(user=self.request.user)
 
     def partial_update(self, request, *args, **kwargs):
-        return super().partial_update(request, *args, **kwargs)
+        from rest_framework.exceptions import ValidationError
+        from django.http import Http404
+
+        try:
+            instance = self.get_object()
+        except Http404:
+            raise ValidationError({"detail": "The offer does not exist."})
+
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        if getattr(instance, '_prefetched_objects_cache', None):
+            instance._prefetched_objects_cache = {}
+
+        return Response(serializer.data)
 
     def list(self, request, *args, **kwargs):
         try:
