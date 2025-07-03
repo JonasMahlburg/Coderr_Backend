@@ -17,17 +17,11 @@ class OfferFilter(django_filters.FilterSet):
     creator_id = django_filters.NumberFilter(field_name='user__id')
 
     def __init__(self, *args, **kwargs):
-        self.validate_query_params(kwargs.get('data', {}))
         try:
             super().__init__(*args, **kwargs)
         except (TypeError, ValueError) as e:
             print(f"DEBUG: OfferFilter initialization error: {e}")
             raise ValidationError({'detail': 'Invalid filter value: ' + str(e)})
-
-    def validate_query_params(self, data):
-        for param in data:
-            if param not in self.allowed_filters:
-                raise ValidationError({param: 'Unknown filter parameter.'})
 
     def filter_min_price(self, queryset, name, value):
         try:
