@@ -45,6 +45,15 @@ class OfferViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
+    def partial_update(self, request, *args, **kwargs):
+        from rest_framework.exceptions import ValidationError
+        from django.http import Http404
+
+        try:
+            return super().partial_update(request, *args, **kwargs)
+        except Http404:
+            raise ValidationError({"detail": "This offer is no longer avaiable"})
+
     def list(self, request, *args, **kwargs):
         try:
             queryset = self.filter_queryset(self.get_queryset())
