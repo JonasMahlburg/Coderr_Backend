@@ -9,8 +9,7 @@ from .permissions import IsBusinessOrReadOnly, IsOfferOwnerOrReadOnly
 from .pagination import OffersResultPagination
 from .filters import OfferFilter
 from django.db.models import Min # Importiere Min
-from rest_framework.exceptions import ValidationError
-from django.http import Http404
+
 
 
 class OfferViewSet(viewsets.ModelViewSet):
