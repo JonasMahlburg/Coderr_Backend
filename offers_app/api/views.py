@@ -9,6 +9,8 @@ from .permissions import IsBusinessOrReadOnly, IsOfferOwnerOrReadOnly
 from .pagination import OffersResultPagination
 from .filters import OfferFilter
 from django.db.models import Min # Importiere Min
+from rest_framework.exceptions import ValidationError
+from django.http import Http404
 
 
 class OfferViewSet(viewsets.ModelViewSet):
@@ -46,13 +48,7 @@ class OfferViewSet(viewsets.ModelViewSet):
         serializer.save(user=self.request.user)
 
     def partial_update(self, request, *args, **kwargs):
-        from rest_framework.exceptions import ValidationError
-        from django.http import Http404
-
-        try:
-            return super().partial_update(request, *args, **kwargs)
-        except Http404:
-            raise ValidationError({"detail": "This offer is no longer avaiable"})
+        return super().partial_update(request, *args, **kwargs)
 
     def list(self, request, *args, **kwargs):
         try:
