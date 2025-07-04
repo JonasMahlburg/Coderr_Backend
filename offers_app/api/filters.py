@@ -1,14 +1,20 @@
-# offers_app/filters.py
 import django_filters
 from rest_framework.exceptions import ValidationError
 from offers_app.models import Offer
 
 class OfferFilter(django_filters.FilterSet):
-    allowed_filters = {
-        'min_price', 'max_price',
-        'min_delivery_time', 'max_delivery_time',
-        'creator_id'
-}
+    """
+    A FilterSet for the Offer model, allowing filtering by price,
+    delivery time, and the creator's ID.
+    """
+    # A set of allowed filter names. Consider making this uppercase if truly a constant.
+    ALLOWED_FILTERS = {
+        'min_price',
+        'max_price',
+        'min_delivery_time',
+        'max_delivery_time',
+        'creator_id',
+    }
 
     min_price = django_filters.NumberFilter(method='filter_min_price')
     max_price = django_filters.NumberFilter(method='filter_max_price')
@@ -17,13 +23,24 @@ class OfferFilter(django_filters.FilterSet):
     creator_id = django_filters.NumberFilter(field_name='user__id')
 
     def __init__(self, *args, **kwargs):
+        """
+        Initializes the OfferFilter. Catches TypeError or ValueError during
+        initialization and raises a ValidationError.
+        """
         try:
             super().__init__(*args, **kwargs)
         except (TypeError, ValueError) as e:
+            # For debugging, printing to console can be useful in development.
+            # In production, consider logging this error properly.
             print(f"DEBUG: OfferFilter initialization error: {e}")
             raise ValidationError({'detail': 'Invalid filter value: ' + str(e)})
 
     def filter_min_price(self, queryset, name, value):
+        """
+        Filters offers to include only those with an overall minimum price
+        greater than or equal to the specified value.
+        Ensures the value is a valid number.
+        """
         try:
             float_value = float(value)
         except ValueError:
@@ -31,6 +48,11 @@ class OfferFilter(django_filters.FilterSet):
         return queryset.filter(overall_min_price__gte=float_value)
 
     def filter_max_price(self, queryset, name, value):
+        """
+        Filters offers to include only those with an overall minimum price
+        less than or equal to the specified value.
+        Ensures the value is a valid number.
+        """
         try:
             float_value = float(value)
         except ValueError:
@@ -38,6 +60,11 @@ class OfferFilter(django_filters.FilterSet):
         return queryset.filter(overall_min_price__lte=float_value)
 
     def filter_min_delivery_time(self, queryset, name, value):
+        """
+        Filters offers to include only those with an overall minimum delivery time
+        greater than or equal to the specified value.
+        Ensures the value is a valid integer.
+        """
         try:
             int_value = int(value)
         except ValueError:
@@ -45,6 +72,11 @@ class OfferFilter(django_filters.FilterSet):
         return queryset.filter(overall_min_delivery_time__gte=int_value)
 
     def filter_max_delivery_time(self, queryset, name, value):
+        """
+        Filters offers to include only those with an overall minimum delivery time
+        less than or equal to the specified value.
+        Ensures the value is a valid integer.
+        """
         try:
             int_value = int(value)
         except ValueError:
@@ -52,5 +84,14 @@ class OfferFilter(django_filters.FilterSet):
         return queryset.filter(overall_min_delivery_time__lte=int_value)
 
     class Meta:
+        """
+        Meta class for OfferFilter, defining the model and fields to filter on.
+        """
         model = Offer
-        fields = ['min_price', 'max_price', 'min_delivery_time', 'max_delivery_time', 'creator_id']
+        fields = [
+            'min_price',
+            'max_price',
+            'min_delivery_time',
+            'max_delivery_time',
+            'creator_id'
+        ]

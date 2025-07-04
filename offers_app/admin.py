@@ -3,11 +3,11 @@ from .models import Offer, OfferDetail
 
 class OfferDetailInline(admin.TabularInline):
     """
-    Allows editing OfferDetail instances directly within the Offer's admin page.
+    Allows inline editing of OfferDetail instances on the Offer admin page.
     Uses TabularInline for a compact table format.
     """
     model = OfferDetail
-    extra = 1 
+    extra = 1
     fields = (
         'title',
         'description',
@@ -17,12 +17,11 @@ class OfferDetailInline(admin.TabularInline):
         'offer_type'
     )
 
-
 @admin.register(Offer)
 class OfferAdmin(admin.ModelAdmin):
     """
     Admin configuration for the Offer model.
-    Organizes display, filtering, searching, and inlines for better usability.
+    Organizes display, filtering, search, and inlines for improved usability.
     """
     list_display = (
         'title',
@@ -41,21 +40,21 @@ class OfferAdmin(admin.ModelAdmin):
 
     search_fields = (
         'title',
-        'description', 
+        'description',
         'user__username'
     )
 
     ordering = ('-created_at',)
 
     fieldsets = (
-        (None, { 
+        (None, {
             'fields': ('user', 'title', 'description', 'offer_type'),
             'description': 'Main information about the offer.'
         }),
-        ('Timestamps', { 
+        ('Timestamps', {
             'fields': ('created_at', 'updated_at'),
             'classes': ('collapse',),
-            'description': 'Automatically recorded dates and times.'
+            'description': 'Automatically recorded timestamps.'
         }),
     )
 
@@ -68,12 +67,15 @@ class OfferAdmin(admin.ModelAdmin):
 
     def display_detail_count(self, obj):
         """
-        Calculates and displays the number of OfferDetails associated with this Offer.
+        Calculates and displays the number of OfferDetails related to this offer.
         """
-        return obj.offerdetail_set.count()
+        return obj.details.count()
     display_detail_count.short_description = 'Details'
 
     def changelist_view(self, request, extra_context=None):
+        """
+        Customizes the title of the changelist view.
+        """
         extra_context = extra_context or {}
         extra_context['title'] = 'Manage Offers'
         return super().changelist_view(request, extra_context=extra_context)
@@ -82,7 +84,7 @@ class OfferAdmin(admin.ModelAdmin):
 class OfferDetailAdmin(admin.ModelAdmin):
     """
     Admin configuration for the OfferDetail model.
-    Optimized for display and search. Note: Often managed via OfferInline.
+    Optimized for display and search. Note: often managed via OfferInline.
     """
     list_display = (
         'title',
@@ -91,14 +93,14 @@ class OfferDetailAdmin(admin.ModelAdmin):
         'revisions',
         'delivery_time_in_days',
         'offer_type',
-        'created_at', 
-        'updated_at'  
+        'created_at',
+        'updated_at'
     )
 
     list_filter = (
         'offer_type',
         'price',
-        'revisions', 
+        'revisions',
         'created_at',
         'updated_at'
     )
@@ -109,10 +111,10 @@ class OfferDetailAdmin(admin.ModelAdmin):
         'offer__title'
     )
 
-    ordering = ('offer__title', 'title') 
+    ordering = ('offer__title', 'title')
 
     fieldsets = (
-        (None, { 
+        (None, {
             'fields': ('offer', 'title', 'description', 'offer_type'),
             'description': 'Core information for this specific offer detail.'
         }),
@@ -122,7 +124,7 @@ class OfferDetailAdmin(admin.ModelAdmin):
         ('Timestamps', {
             'fields': ('created_at', 'updated_at'),
             'classes': ('collapse',),
-            'description': 'Record of creation and last modification.'
+            'description': 'Record of creation and last update.'
         }),
     )
 
@@ -131,8 +133,10 @@ class OfferDetailAdmin(admin.ModelAdmin):
         'updated_at'
     )
 
-
     def changelist_view(self, request, extra_context=None):
+        """
+        Customizes the title of the changelist view.
+        """
         extra_context = extra_context or {}
         extra_context['title'] = 'Manage Offer Details'
         return super().changelist_view(request, extra_context=extra_context)
