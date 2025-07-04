@@ -1,9 +1,4 @@
-# offers_app/serializers.py
-
-# Third-party imports
 from rest_framework import serializers
-
-# Local application imports
 from offers_app.models import Offer, OfferDetail
 
 
