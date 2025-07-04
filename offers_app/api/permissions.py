@@ -36,7 +36,7 @@ class IsBusinessOrReadOnly(BasePermission):
         if request.method in SAFE_METHODS:
             if hasattr(view, 'action') and view.action == 'retrieve':
                 return request.user and request.user.is_authenticated
-            return True  # Allow all users to list offers
+            return True
 
         return (
             request.user and

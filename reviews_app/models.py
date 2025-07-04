@@ -6,7 +6,6 @@ to prevent self-reviews and duplicate reviews.
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
-from auth_app.models import UserProfile
 
 
 class Review(models.Model):
@@ -55,11 +54,9 @@ class Review(models.Model):
         Performs custom validation for the Review instance.
         Ensures a user cannot review themselves and only customers can write reviews.
         """
-        # Prevent a user from reviewing themselves
         if self.business_user == self.reviewer:
             raise ValidationError("Users cannot review themselves.")
 
-        # Ensure only customers with a UserProfile can write reviews
         profile = getattr(self.reviewer, 'userprofile', None)
         if not profile or profile.type != 'customer':
             raise ValidationError("Only customers with a profile are allowed to write reviews.")
@@ -81,3 +78,4 @@ class Review(models.Model):
             f"Review from {self.reviewer.username} for "
             f"{self.business_user.username} ({self.rating} stars)"
         )
+    

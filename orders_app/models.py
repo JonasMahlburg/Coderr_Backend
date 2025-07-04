@@ -1,5 +1,4 @@
 # orders_app/models.py (assuming this is the file)
-
 from django.db import models
 from django.contrib.auth.models import User
 from offers_app.models import Offer, OfferDetail
@@ -20,7 +19,6 @@ class Order(models.Model):
         OfferDetail, on_delete=models.CASCADE, related_name='orders_for_detail'
     )
 
-    # Status choices for an order
     STATUS_CHOICES = [
         ('pending', 'Pending'),
         ('accepted', 'Accepted'),
@@ -64,3 +62,4 @@ class Order(models.Model):
         the price at order time and quantity.
         """
         return self.price_at_order * self.quantity
+    

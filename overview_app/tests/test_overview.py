@@ -1,3 +1,9 @@
+"""
+Test suite for the BaseInfoAPIView in the overview_app.
+
+Verifies that platform statistics are returned correctly and that the
+endpoint is publicly accessible without authentication.
+"""
 from rest_framework.test import APITestCase
 from rest_framework import status
 from django.urls import reverse
@@ -7,7 +13,16 @@ from auth_app.models import UserProfile
 from django.contrib.auth.models import User
 
 class BaseInfoAPITests(APITestCase):
+    """
+    Integration tests for the /api/base-info/ endpoint.
+
+    Tests correct data aggregation and open access for unauthenticated users.
+    """
     def setUp(self):
+        """
+        Sets up test data including users, profiles, reviews, and offers.
+        Prepares the URL used in the base info endpoint tests.
+        """
         user1 = User.objects.create(username="user1")
         user2 = User.objects.create(username="user2")
         user3 = User.objects.create(username="user3")
@@ -25,6 +40,9 @@ class BaseInfoAPITests(APITestCase):
         self.url = "/api/base-info/"
 
     def test_base_info_returns_correct_data(self):
+        """
+        Test that the endpoint returns the correct review, rating, profile, and offer statistics.
+        """
         response = self.client.get(self.url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -39,6 +57,9 @@ class BaseInfoAPITests(APITestCase):
         self.assertEqual(response.data, expected)
 
     def test_base_info_accessible_without_authentication(self):
+        """
+        Test that the base info endpoint can be accessed without authentication.
+        """
         self.client.credentials()
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)

@@ -7,7 +7,6 @@ class OfferFilter(django_filters.FilterSet):
     A FilterSet for the Offer model, allowing filtering by price,
     delivery time, and the creator's ID.
     """
-    # A set of allowed filter names. Consider making this uppercase if truly a constant.
     ALLOWED_FILTERS = {
         'min_price',
         'max_price',
@@ -30,8 +29,6 @@ class OfferFilter(django_filters.FilterSet):
         try:
             super().__init__(*args, **kwargs)
         except (TypeError, ValueError) as e:
-            # For debugging, printing to console can be useful in development.
-            # In production, consider logging this error properly.
             print(f"DEBUG: OfferFilter initialization error: {e}")
             raise ValidationError({'detail': 'Invalid filter value: ' + str(e)})
 

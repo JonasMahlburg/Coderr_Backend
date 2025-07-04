@@ -8,9 +8,19 @@ from auth_app.models import UserProfile
 from rest_framework import status
 from decimal import Decimal
 
+"""
+Test suite for Order API endpoints.
 
+Covers creation, retrieval, update, deletion, and custom endpoints for order counts.
+Includes both customer and business user scenarios.
+"""
 
 class OrdersAPITests(APITestCase):
+    """
+    End-to-end tests for order-related API functionality.
+
+    Ensures business and customer users can interact with the API as expected.
+    """
 
     def setUp(self):
         self.business_user = User.objects.create_user(username='business_user', password='test123')
@@ -33,11 +43,17 @@ class OrdersAPITests(APITestCase):
 
 
     def test_get_order(self):
+        """
+        Test retrieving the list of orders returns HTTP 200.
+        """
         url = reverse('order-list')
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
     
     def test_post_order(self):
+        """
+        Test creating a new order using offer_detail_id returns HTTP 201 and correct fields.
+        """
         from offers_app.models import Offer, OfferDetail
 
         offer = Offer.objects.create(
@@ -71,9 +87,10 @@ class OrdersAPITests(APITestCase):
         self.assertIn(response.data['offer_type'], ["basic", "", None])
         self.assertEqual(response.data['status'], "in_progress")
 
-
     def test_patch_order_status_as_business_user(self):
-
+        """
+        Test a business user can update the status of an order to 'completed'.
+        """
 
         offer = Offer.objects.create(
             user=self.business_user,
@@ -107,6 +124,9 @@ class OrdersAPITests(APITestCase):
         self.assertEqual(response.data['status'], 'completed')
 
     def test_delete_order(self):
+        """
+        Test a business user can delete an order, and it no longer exists.
+        """
         offer = Offer.objects.create(
             user=self.business_user,
             title="Angebot zum Löschen",
@@ -137,7 +157,9 @@ class OrdersAPITests(APITestCase):
         self.assertFalse(Order.objects.filter(id=order.id).exists())
 
     def test_get_order_count_for_business_user(self):
-
+        """
+        Test the API returns the correct count of in-progress orders for a business user.
+        """
 
         offer = Offer.objects.create(
             user=self.business_user,
@@ -173,7 +195,9 @@ class OrdersAPITests(APITestCase):
         self.assertEqual(response.data['order_count'], 3)
    
     def test_get_completed_order_count_for_business_user(self):
-
+        """
+        Test the API returns the correct count of completed orders for a business user.
+        """
 
         offer = Offer.objects.create(
             user=self.business_user,

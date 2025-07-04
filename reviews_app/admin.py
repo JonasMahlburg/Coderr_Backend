@@ -1,8 +1,16 @@
+"""Admin configuration for the Review model, providing a customized interface for managing customer reviews."""
+
 from django.contrib import admin
 from .models import Review
 
 @admin.register(Review)
 class ReviewAdmin(admin.ModelAdmin):
+    """
+    Admin interface definition for the Review model.
+
+    Configures list display, filtering, search, ordering, readonly fields,
+    and fieldsets to facilitate efficient management of customer reviews.
+    """
 
     list_display = (
         'business_user',
@@ -57,8 +65,17 @@ class ReviewAdmin(admin.ModelAdmin):
         return "—" 
     display_short_description.short_description = 'Description'
 
-
     def changelist_view(self, request, extra_context=None):
+        """
+        Customize the changelist view to include a custom page title.
+
+        Args:
+            request: The HTTP request object.
+            extra_context (dict, optional): Additional context variables for the template.
+
+        Returns:
+            HttpResponse: The response object for the changelist view.
+        """
         extra_context = extra_context or {}
         extra_context['title'] = 'Manage Customer Reviews' 
         return super().changelist_view(request, extra_context=extra_context)

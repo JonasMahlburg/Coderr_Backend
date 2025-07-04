@@ -6,6 +6,21 @@ from rest_framework import status
 from django.urls import reverse
 import copy
 
+"""
+Test suite for Offer and OfferDetail API endpoints.
+
+Covers CRUD operations, filtering, and permission enforcement to ensure
+correct behavior for business and customer users interacting with offers.
+"""
+
+
+
+"""
+End-to-end API tests for Offer and OfferDetail functionality.
+
+Validates creation, retrieval, update, deletion, filtering, and permission
+checks for various user types and offer configurations.
+"""
 
 class OffersAPITest(APITestCase):
 
@@ -29,12 +44,17 @@ class OffersAPITest(APITestCase):
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token.key)
 
     def test_get_offers(self):
+        """
+        Test retrieving the list of offers returns HTTP 200.
+        """
         url = reverse('offer-list')
         response = self.client.get(url)
-
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_post_offers(self):
+        """
+        Test that posting a new offer with multiple details returns HTTP 201.
+        """
         url = reverse('offer-list')
         data = {
             "title": "Design-Paket",
@@ -70,7 +90,9 @@ class OffersAPITest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def test_get_offer_by_id(self):
-  
+        """
+        Test retrieving a specific offer by ID returns correct data.
+        """
         create_url = reverse('offer-list')
         offer_data = {
             "title": "Einzelabruf-Angebot",
@@ -112,7 +134,9 @@ class OffersAPITest(APITestCase):
         self.assertEqual(get_response.data['id'], offer_id)
 
     def test_patch_offer(self):
-
+        """
+        Test updating the description of an existing offer using PATCH.
+        """
         create_url = reverse('offer-list')
         offer_data = {
             "title": "Design-Paket",
@@ -158,6 +182,9 @@ class OffersAPITest(APITestCase):
         self.assertEqual(patch_response.data['description'], "Neue, verbesserte Beschreibung")
 
     def test_delete_offer(self):
+        """
+        Test deleting an offer removes it and results in 404 on subsequent fetch.
+        """
         create_url = reverse('offer-list')
         offer_data = {
             "title": "Löschbares Angebot",
@@ -203,6 +230,9 @@ class OffersAPITest(APITestCase):
 
 
     def test_get_offerdetail_by_id(self):
+        """
+        Test retrieving a specific OfferDetail by ID returns correct information.
+        """
         create_url = reverse('offer-list')
         offer_data = {
             "title": "Angebot mit Detailabruf",
@@ -251,7 +281,6 @@ class OffersAPITest(APITestCase):
         min_delivery and max_delivery query parameters.
         """
         create_url = reverse('offer-list')
-        # Erstelle zwei Angebote mit unterschiedlichen Preis- und Lieferzeiten
         offer_data_cheap = {
             "title": "Günstiges Angebot",
             "description": "Zum Testen günstiger Preise.",
@@ -312,7 +341,6 @@ class OffersAPITest(APITestCase):
             }
         ]
     }
-        # Angebote erstellen
         response1 = self.client.post(create_url, offer_data_cheap, format='json')
         if response1.status_code != status.HTTP_201_CREATED:
             print("Validation error for cheap offer:", response1.data)
@@ -323,25 +351,21 @@ class OffersAPITest(APITestCase):
 
         url = reverse('offer-list')
 
-        # Filter min_price=200 sollte nur das teure Angebot zurückgeben
         response_min_price = self.client.get(url + '?min_price=200')
         self.assertEqual(response_min_price.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response_min_price.data['results']), 1)
         self.assertEqual(response_min_price.data['results'][0]['title'], "Teures Angebot")
 
-        # Filter max_price=100 sollte nur das günstige Angebot zurückgeben
         response_max_price = self.client.get(url + '?max_price=100')
         self.assertEqual(response_max_price.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response_max_price.data['results']), 1)
         self.assertEqual(response_max_price.data['results'][0]['title'], "Günstiges Angebot")
 
-        # Filter min_delivery=4 sollte nur das teure Angebot zurückgeben
         response_min_delivery = self.client.get(url + '?min_delivery=4')
         self.assertEqual(response_min_delivery.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response_min_delivery.data['results']), 1)
         self.assertEqual(response_min_delivery.data['results'][0]['title'], "Teures Angebot")
 
-        # Filter max_delivery=2 sollte nur das günstige Angebot zurückgeben
         response_max_delivery = self.client.get(url + '?max_delivery=2')
         self.assertEqual(response_max_delivery.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response_max_delivery.data['results']), 1)
@@ -413,7 +437,6 @@ class OffersAPITest(APITestCase):
 
         delete_response = self.client.delete(detail_url)
         self.assertEqual(delete_response.status_code, status.HTTP_204_NO_CONTENT)
-
 
         offer_for_other_user = copy.deepcopy(base_offer_data)
         offer_for_other_user["title"] = "Testangebot (Fremdzugriff-Test)"

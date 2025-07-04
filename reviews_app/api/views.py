@@ -13,25 +13,37 @@ from rest_framework.exceptions import ValidationError as DRFValidationError
 from .permissions import IsCustomerAndAuthenticated
 
 
-
 class ReviewViewSet(viewsets.ModelViewSet):
     """
-    ViewSet for Review model.
-    Supports listing, creating, retrieving, updating, and deleting reviews.
-    Uses custom permission to enforce business rules.
+    ViewSet for managing Review instances.
+
+    Provides CRUD operations for reviews with permission enforcement:
+    - Only authenticated customers can create reviews.
+    - Each customer can create only one review per business user.
+    - Only the creator of a review can update or delete it.
+    - All authenticated users can read reviews.
     """
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
     permission_classes = [IsCustomerAndAuthenticated]
 
     def perform_create(self, serializer):
+        """
+        Saves a new review instance with the current user set as the reviewer.
+
+        Catches model validation errors and raises them as DRF validation errors.
+        """
         try:
             serializer.save(reviewer=self.request.user)
         except ValidationError as e:
             raise DRFValidationError(e.message_dict)
 
     def list(self, request, *args, **kwargs):
+        """
+        Retrieves and returns a list of all reviews serialized.
+
+        Does not apply any additional filtering or pagination.
+        """
         queryset = self.get_queryset()
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
-    

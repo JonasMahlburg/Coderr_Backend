@@ -1,3 +1,9 @@
+"""
+Test suite for Review API endpoints.
+
+Includes tests for listing, creating, permissions, filtering, and error handling
+to ensure the review API behaves as expected for various user roles and inputs.
+"""
 from rest_framework.test import APITestCase, APIClient
 from django.urls import reverse
 from rest_framework import status
@@ -6,9 +12,15 @@ from reviews_app.models import Review
 from unittest.mock import patch
 from auth_app.models import UserProfile
 
-class ReviewListTests(APITestCase):
 
+class ReviewListTests(APITestCase):
+    """
+    Tests for listing reviews with authentication, filtering, and error simulation.
+    """
     def setUp(self):
+        """
+        Sets up initial test data and configurations for each test case.
+        """
         self.client = APIClient()
         self.user = User.objects.create_user(username='TestUser', password='password123')
         UserProfile.objects.create(user=self.user, type='customer')
@@ -36,16 +48,25 @@ class ReviewListTests(APITestCase):
 )
 
     def test_get_reviews_authenticated_returns_200(self):
+        """
+        Tests that authenticated users can successfully retrieve the review list.
+        """
         self.client.force_authenticate(user=self.user)
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(isinstance(response.data, list))
 
     def test_get_reviews_unauthenticated_returns_401(self):
+        """
+        Tests that unauthenticated users are denied access to the review list.
+        """
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_get_reviews_with_filtering_and_ordering(self):
+        """
+        Tests that reviews can be filtered by reviewer and business user, and ordered by rating.
+        """
         Review.objects.all().delete()
         Review.objects.create(
             business_user=self.user,
@@ -65,7 +86,9 @@ class ReviewListTests(APITestCase):
             self.assertEqual(review['reviewer'], self.other_user.id, msg=f"Falscher Reviewer: {review}")
 
     def test_internal_server_error_simulation_returns_500(self):
-        
+        """
+        Simulates an internal server error during review list retrieval and checks for exception.
+        """
         from unittest.mock import patch
         self.client.force_authenticate(user=self.user)
         with patch('reviews_app.api.views.ReviewViewSet.list', side_effect=Exception("Unexpected error")):
@@ -75,11 +98,14 @@ class ReviewListTests(APITestCase):
 
 
 class ReviewCreateTests(APITestCase):
-
+    """
+    Tests for creating reviews with various authentication and validation scenarios.
+    """
     def setUp(self):
+        """
+        Sets up initial test data and configurations for each test case.
+        """
         self.client = APIClient()
-
-     
         self.business_user = User.objects.create_user(username='Business', password='pass')
         self.customer_user = User.objects.create_user(username='Customer', password='pass')
         UserProfile.objects.create(user=self.customer_user, type='customer')
@@ -93,6 +119,9 @@ class ReviewCreateTests(APITestCase):
         }
 
     def test_create_review_success_201(self):
+        """
+        Tests successful creation of a review by an authenticated customer user.
+        """
         Review.objects.all().delete()
         self.client.force_authenticate(user=self.customer_user)
         response = self.client.post(self.url, self.valid_payload, format='json')
@@ -100,17 +129,25 @@ class ReviewCreateTests(APITestCase):
         self.assertEqual(response.data.get("rating"), 5)
 
     def test_create_review_unauthenticated_401(self):
+        """
+        Tests that unauthenticated users cannot create a review.
+        """
         response = self.client.post(self.url, self.valid_payload, format='json')
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_create_review_without_customer_profile_401(self):
-       
+        """
+        Tests that users without a customer profile cannot create reviews.
+        """
         user = User.objects.create_user(username='NotCustomer', password='pass')
         self.client.force_authenticate(user=user)
         response = self.client.post(self.url, self.valid_payload, format='json')
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_create_review_twice_for_same_business_403(self):
+        """
+        Tests that a customer cannot create more than one review for the same business.
+        """
         self.client.force_authenticate(user=self.customer_user)
 
         self.client.post(self.url, self.valid_payload, format='json')
@@ -119,6 +156,9 @@ class ReviewCreateTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_create_review_invalid_payload_400(self):
+        """
+        Tests that invalid review payloads result in a bad request response.
+        """
         self.client.force_authenticate(user=self.customer_user)
         payload = {
             "business_user": "",
@@ -129,6 +169,9 @@ class ReviewCreateTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_internal_server_error_simulated_500(self):
+        """
+        Simulates an internal server error during review creation and checks for exception.
+        """
         Review.objects.all().delete()
         self.client.force_authenticate(user=self.customer_user)
         with patch('reviews_app.api.views.ReviewViewSet.create', side_effect=Exception("Server down")):
@@ -136,11 +179,15 @@ class ReviewCreateTests(APITestCase):
                 self.client.post(self.url, self.valid_payload, format='json')
             self.assertEqual(str(context.exception), "Server down")
 
-from rest_framework import status
 
 class ReviewPermissionTests(APITestCase):
-
+    """
+    Tests for review permission enforcement including read, create, edit, and delete.
+    """
     def setUp(self):
+        """
+        Sets up initial test data and configurations for each test case.
+        """
         self.client = APIClient()
         self.customer_user = User.objects.create_user(username='customer', password='pass')
         UserProfile.objects.create(user=self.customer_user, type='customer')
@@ -158,6 +205,9 @@ class ReviewPermissionTests(APITestCase):
         }
 
     def test_all_authenticated_can_read_reviews(self):
+        """
+        Tests that all authenticated users can read reviews.
+        """
         Review.objects.create(business_user=self.business_user, reviewer=self.customer_user, rating=5, description="Good")
 
         self.client.force_authenticate(user=self.non_customer_user)
@@ -166,16 +216,25 @@ class ReviewPermissionTests(APITestCase):
         self.assertTrue(isinstance(response.data, list))
 
     def test_non_customer_cannot_create_review(self):
+        """
+        Tests that users without a customer profile cannot create reviews.
+        """
         self.client.force_authenticate(user=self.non_customer_user)
         response = self.client.post(self.url, self.review_data, format='json')
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_customer_can_create_review(self):
+        """
+        Tests that users with a customer profile can create reviews.
+        """
         self.client.force_authenticate(user=self.customer_user)
         response = self.client.post(self.url, self.review_data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def test_only_owner_can_edit_or_delete_review(self):
+        """
+        Tests that only the owner of a review can edit or delete it.
+        """
         review = Review.objects.create(business_user=self.business_user, reviewer=self.customer_user, rating=5, description="Owner Review")
         edit_url = reverse('review-detail', kwargs={'pk': review.id})
 

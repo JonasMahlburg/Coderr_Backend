@@ -4,15 +4,10 @@ It creates users (business and customer), offers with details, orders, and revie
 ensuring a basic set of interconnected data exists.
 """
 
-# Standard library imports
 import os
 import random
-
-# Third-party imports
 import django
 from django.contrib.auth.models import User
-
-# Local application imports
 from auth_app.models import UserProfile
 from offers_app.models import Offer, OfferDetail
 from orders_app.models import Order

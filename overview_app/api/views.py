@@ -1,6 +1,8 @@
 """
-API views for the overview_app providing general platform statistics
-such as review counts, average ratings, business profiles, and offers.
+API views for the overview_app providing general platform statistics.
+
+Includes endpoints for retrieving aggregated data such as review counts,
+average ratings, number of business profiles, and number of available offers.
 """
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -11,16 +13,25 @@ from offers_app.models import Offer
 from auth_app.models import UserProfile 
 from rest_framework.permissions import AllowAny
 
+
 class BaseInfoAPIView(APIView):
     """
-    APIView to retrieve general base information about the platform.
-    Provides counts of reviews, average rating, business profiles, and offers.
-    No authentication is required for access.
+    API view to retrieve general base information about the platform.
+
+    Returns statistics including total reviews, average rating, number of
+    business profiles, and total offer count. Publicly accessible without authentication.
     """
     permission_classes = [AllowAny]
     authentication_classes = []
 
     def get(self, request):
+        """
+        Handles GET requests and returns platform statistics in JSON format.
+
+        Returns:
+            Response: A JSON response containing review count, average rating,
+            business profile count, and offer count.
+        """
         try:
             review_count = Review.objects.count()
             average_rating = Review.objects.aggregate(avg=Avg('rating'))['avg'] or 0.0

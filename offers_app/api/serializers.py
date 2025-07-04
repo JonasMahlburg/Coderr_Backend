@@ -281,3 +281,4 @@ class OfferPatchSerializer(serializers.ModelSerializer):
             'last_name': obj.user.last_name,
             'username': obj.user.username,
         }
+    

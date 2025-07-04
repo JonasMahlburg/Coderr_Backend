@@ -4,9 +4,10 @@ and status updates including nested offer and user data.
 """
 from rest_framework import serializers
 from orders_app.models import Order
-from offers_app.models import Offer, OfferDetail
+from offers_app.models import OfferDetail
 from offers_app.api.serializers import OfferDetailSerializer, OfferSerializer
 from django.contrib.auth.models import User
+
 
 class UserSerializerForOrder(serializers.ModelSerializer):
     """
@@ -18,8 +19,11 @@ class UserSerializerForOrder(serializers.ModelSerializer):
 
 class OrderSerializer(serializers.ModelSerializer):
     """
-    Serializer for creating and retrieving orders.
-    Includes nested representations of customer, offer, and ordered_detail.
+    Serializer for creating and retrieving Order instances.
+
+    Includes nested, read-only representations of the customer, offer,
+    and ordered detail. Accepts an offer_detail_id for order creation,
+    automatically setting the related offer and price based on the selected detail.
     """
 
     customer = UserSerializerForOrder(read_only=True)
@@ -43,6 +47,12 @@ class OrderSerializer(serializers.ModelSerializer):
 
 
     def create(self, validated_data):
+        """
+        Creates a new Order instance with the current user as the customer.
+
+        Extracts the related offer and price from the selected offer detail,
+        sets the default status to 'in_progress', and saves the order.
+        """
         customer = self.context['request'].user
         validated_data.pop('customer', None)
         offer_detail = validated_data.pop('offer_detail_id', None)
@@ -60,6 +70,12 @@ class OrderSerializer(serializers.ModelSerializer):
         return order
 
     def validate(self, data):
+        """
+        Validates that the ordered_detail belongs to the specified offer.
+
+        Raises:
+            ValidationError: If the ordered_detail does not match the offer.
+        """
         if 'offer' in data and 'ordered_detail' in data:
             offer = data['offer']
             ordered_detail = data['ordered_detail']
@@ -103,6 +119,7 @@ class OrderCombinedSerializer(serializers.ModelSerializer):
         ]
      
         read_only_fields = fields
+        
 
 class OrderStatusUpdateSerializer(serializers.ModelSerializer):
     """

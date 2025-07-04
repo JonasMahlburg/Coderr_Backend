@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 
+
 class Offer(models.Model):
     """
     Represents an offer created by a user.

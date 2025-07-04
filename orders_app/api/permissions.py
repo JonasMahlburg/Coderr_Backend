@@ -16,3 +16,4 @@ class IsCustomerUser(BasePermission):
             hasattr(request.user, 'userprofile') and
             request.user.userprofile.type == 'customer'
         )
+    

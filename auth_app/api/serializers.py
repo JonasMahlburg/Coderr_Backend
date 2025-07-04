@@ -14,7 +14,6 @@ class UserProfileSerializer(serializers.ModelSerializer):
     """
     Serializer for full user profile data including contact details and file uploads.
     """
-
     username = serializers.CharField(source='user.username', read_only=True, default='')
     first_name = serializers.CharField(source='user.first_name', allow_blank=True, default='')
     last_name = serializers.CharField(source='user.last_name', allow_blank=True, default='')
@@ -35,6 +34,18 @@ class UserProfileSerializer(serializers.ModelSerializer):
         read_only_fields = ['user', 'username', 'type', 'created_at']
 
     def to_representation(self, instance):
+        """
+        Convert the UserProfile instance into a dictionary for serialization.
+
+        Ensures that all fields with None values are represented as empty strings
+        for consistent API responses.
+
+        Args:
+            instance (UserProfile): The user profile instance to serialize.
+
+        Returns:
+            dict: Serialized representation of the user profile.
+        """
         representation = super().to_representation(instance)
         for key, value in representation.items():
             if value is None:
@@ -42,6 +53,18 @@ class UserProfileSerializer(serializers.ModelSerializer):
         return representation
     
     def update(self, instance, validated_data):
+        """
+        Update the UserProfile instance and related User fields with validated data.
+
+        Handles nested user data update and ensures None values are replaced with empty strings.
+
+        Args:
+            instance (UserProfile): The existing profile instance to update.
+            validated_data (dict): Dictionary of validated data from the request.
+
+        Returns:
+            UserProfile: The updated user profile instance.
+        """
         user_data = validated_data.pop('user', {})
 
         user = instance.user
@@ -113,18 +136,19 @@ class BusinessProfileSerializer(serializers.ModelSerializer):
 
 class RegistrationSerializer(serializers.ModelSerializer):
     """
-Serializer for user registration.
+    Serializer for user registration.
 
-Validates that passwords match and that the email is unique before
-creating a new User instance.
+    Validates that passwords match and that the email and username are unique before
+    creating a new User and associated UserProfile instance.
 
-Fields:
-    id (int): User ID (read-only).
-    username (str): Full name of the user (used to construct first and last name).
-    email (str): Email address of the user.
-    password (str): Password (write-only).
-    repeated_password (str): Password confirmation (write-only).
-"""
+    Fields:
+        id (int): User ID (read-only).
+        username (str): Full name of the user (used to construct first and last name).
+        email (str): Email address of the user.
+        password (str): Password (write-only).
+        repeated_password (str): Password confirmation (write-only).
+        type (str): User type (either 'customer' or 'business').
+    """
     email = serializers.EmailField(required=True)
     repeated_password = serializers.CharField(write_only=True)
     username = serializers.CharField(write_only=True, allow_blank=False)
@@ -140,6 +164,18 @@ Fields:
         }
 
     def create(self, validated_data):
+        """
+        Creates a new User instance after validating the input data.
+
+        Ensures that the provided passwords match, and that both the email and username are unique.
+        Automatically splits the username into first and last name components.
+
+        Args:
+            validated_data (dict): The validated user input data.
+
+        Returns:
+            User: The newly created user instance.
+        """
         pw = validated_data.pop('password')
         repeated_pw = validated_data.pop('repeated_password')
         user_type = validated_data.pop('type')
@@ -181,6 +217,18 @@ class UsernameAuthTokenSerializer(serializers.Serializer):
     password = serializers.CharField(label="Password", style={'input_type': 'password'}, trim_whitespace=False)
 
     def validate(self, attrs):
+        """
+        Validates the username and password credentials.
+
+        Ensures both fields are provided and authenticates the user.
+        Raises a validation error if authentication fails.
+
+        Args:
+            attrs (dict): Incoming data with username and password.
+
+        Returns:
+            dict: Validated data including authenticated user instance.
+        """
         username = attrs.get('username')
         password = attrs.get('password')
 

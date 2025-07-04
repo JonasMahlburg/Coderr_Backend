@@ -13,15 +13,28 @@ from rest_framework.response import Response
 from django.http import Http404
 from rest_framework.exceptions import ValidationError
 
+"""
+API views for managing Offer and OfferDetail resources.
+
+Includes full CRUD operations for OfferViewSet, with support for filtering,
+searching, ordering, and pagination. Also includes a detail viewset for
+retrieving, updating, and deleting individual OfferDetail instances.
+"""
+
 class OfferViewSet(viewsets.ModelViewSet):
     """
-    ViewSet for managing Offer objects.
-    Supports list, create, retrieve, update, and delete operations.
-    Applies filtering, searching, and pagination for offer listings.
+    ViewSet for managing Offer instances.
+
+    Provides CRUD operations and supports filtering, searching, ordering, and pagination.
+    Handles user-specific permissions and annotated minimum values for price and delivery time.
     """
     queryset = Offer.objects.all()
 
     def get_queryset(self):
+        """
+        Returns a queryset of Offer objects annotated with minimum price and delivery time,
+        ordered by the most recently updated.
+        """
         return Offer.objects.annotate(
             overall_min_price=Min('details__price'),
             overall_min_delivery_time=Min('details__delivery_time_in_days')
@@ -36,6 +49,9 @@ class OfferViewSet(viewsets.ModelViewSet):
     ordering = ['-updated_at']
 
     def get_serializer_class(self):
+        """
+        Returns the appropriate serializer class based on the current action.
+        """
         if self.action == 'list':
             return OfferListSerializer
         elif self.action == 'retrieve':
@@ -45,9 +61,17 @@ class OfferViewSet(viewsets.ModelViewSet):
         return OfferSerializer
 
     def perform_create(self, serializer):
+        """
+        Saves a new Offer instance and assigns the current user as the owner.
+        """
         serializer.save(user=self.request.user)
 
     def partial_update(self, request, *args, **kwargs):
+        """
+        Handles partial update (PATCH) for an Offer instance.
+
+        Ensures each detail contains an 'offer_type' and handles missing or invalid data gracefully.
+        """
         if not request.data:
             return Response(
                 {"detail": "no id"},
@@ -74,6 +98,11 @@ class OfferViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
          
     def list(self, request, *args, **kwargs):
+        """
+        Returns a list of offers, filtered and paginated as needed.
+
+        Handles invalid filter parameters by returning a validation error.
+        """
         try:
             queryset = self.filter_queryset(self.get_queryset())
         except (django_filters.exceptions.FieldLookupError, ValueError):
@@ -93,6 +122,12 @@ class OfferDetailViewSet(mixins.RetrieveModelMixin,
                          mixins.UpdateModelMixin,
                          mixins.DestroyModelMixin,
                          viewsets.GenericViewSet):
+    """
+    ViewSet for managing individual OfferDetail instances.
+
+    Supports retrieve, partial update, and delete operations.
+    Requires authentication.
+    """
     queryset = OfferDetail.objects.all()
     serializer_class = OfferDetailSerializer
     permission_classes = [IsAuthenticated]
