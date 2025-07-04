@@ -48,8 +48,31 @@ class OfferViewSet(viewsets.ModelViewSet):
         serializer.save(user=self.request.user)
 
     def partial_update(self, request, *args, **kwargs):
-         return super().partial_update(request, *args, **kwargs)
-
+        if not request.data:
+            return Response(
+                {"detail": "no id"},
+                status=status.HTTP_404_NOT_FOUND
+                )
+            
+        for detail in request.data.get("details", []):
+            if "offer_type" not in detail:
+                return Response(
+                    {"detail": "Missing 'offer_type' in one or more details."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        try:
+             instance = self.get_object()
+        except Http404:
+           return Response(
+                {"detail": "no id"},
+                status=status.HTTP_404_NOT_FOUND
+           )
+               
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response(serializer.data)
+         
     def list(self, request, *args, **kwargs):
         try:
             queryset = self.filter_queryset(self.get_queryset())

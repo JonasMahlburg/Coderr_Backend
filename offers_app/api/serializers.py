@@ -223,7 +223,7 @@ class OfferPatchSerializer(serializers.ModelSerializer):
             'min_price',
             'min_delivery_time',
             'user_details',
-            'offer_type', # Include offer_type if it's a top-level field for Offers
+            'offer_type', 
         ]
 
     def validate(self, data):
@@ -246,29 +246,25 @@ class OfferPatchSerializer(serializers.ModelSerializer):
         """
         details_data = validated_data.pop('details', None)
 
-        # Update top-level Offer fields
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
 
-        # Handle nested OfferDetail updates
         if details_data is not None:
             for incoming_detail in details_data:
                 offer_type = incoming_detail.get('offer_type')
-                # If offer_type is missing for an incoming detail, raise validation error
+ 
                 if not offer_type:
                     raise serializers.ValidationError(
                         {"offer_type": "Offer type is required for each detail in PATCH."}
                     )
 
                 try:
-                    # Attempt to get existing detail by offer_type
                     detail_instance = instance.details.get(offer_type=offer_type)
                 except OfferDetail.DoesNotExist:
-                    # If detail with this offer_type doesn't exist, skip it for partial update
                     continue
 
-                # Update existing detail's fields
+         
                 for attr, value in incoming_detail.items():
                     setattr(detail_instance, attr, value)
                 detail_instance.save()
