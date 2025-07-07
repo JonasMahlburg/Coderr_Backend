@@ -29,6 +29,30 @@ Offer.objects.all().delete()
 UserProfile.objects.all().delete()
 User.objects.all().delete()
 
+# --- Create GUEST Users ---
+guest_customer_user = User.objects.create_user(
+    username='Bob',
+    email='bob_guest@mail.com',
+    password='customPassword'
+)
+UserProfile.objects.create(
+    user=guest_customer_user,
+    type='customer',
+    tel='+49 170 0000000',
+    location='Guest City'
+)
+
+guest_business_user = User.objects.create_user(
+    username='Business',
+    email='business_guest@mail.com',
+    password='businessPassword'
+)
+UserProfile.objects.create(
+    user=guest_business_user,
+    type='business',
+    description='Guest Business Account',
+    location='Guest City'
+)
 
 # --- Create Business Users and Offers ---
 # Generate 5 business users, each with a UserProfile and multiple offers.
