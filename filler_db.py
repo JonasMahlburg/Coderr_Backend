@@ -5,19 +5,21 @@ ensuring a basic set of interconnected data exists.
 """
 
 import os
-import random
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings')
 import django
+django.setup()
+
+
+
+# --- Django Setup ---
+# Set the Django settings module and configure Django.
+
+import random
 from django.contrib.auth.models import User
 from auth_app.models import UserProfile
 from offers_app.models import Offer, OfferDetail
 from orders_app.models import Order
 from reviews_app.models import Review
-
-
-# --- Django Setup ---
-# Set the Django settings module and configure Django.
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings')
-django.setup()
 
 
 # --- Clear Existing Data ---
