@@ -17,8 +17,9 @@ class OfferDetailSerializer(serializers.ModelSerializer):
             'price',
             'features',
             'offer_type',
+            'image',
         ]
-
+    image = serializers.ImageField(required=False, allow_null=True)
 
 class OfferSerializer(serializers.ModelSerializer):
     """
@@ -35,6 +36,7 @@ class OfferSerializer(serializers.ModelSerializer):
     )
     user_details = serializers.SerializerMethodField(read_only=True)
     user = serializers.HiddenField(default=serializers.CurrentUserDefault())
+    image = serializers.ImageField(required=False, allow_null=True)
 
     class Meta:
         model = Offer
@@ -68,9 +70,18 @@ class OfferSerializer(serializers.ModelSerializer):
         Creates a new Offer instance along with its associated OfferDetail instances.
         """
         details_data = validated_data.pop('details')
-        offer = Offer.objects.create(**validated_data)
-        for detail in details_data:
-            OfferDetail.objects.create(offer=offer, **detail)
+        offer = Offer.objects.create(**validated_data) 
+
+        for detail_data in details_data:
+
+            detail_file = detail_data.pop('file', None) 
+
+
+            offer_detail = OfferDetail.objects.create(offer=offer, **detail_data)
+
+            if detail_file:
+                offer_detail.file = detail_file
+                offer_detail.save() 
         return offer
 
     def get_user_details(self, obj):
@@ -160,7 +171,7 @@ class OfferDetailLinkSerializer(serializers.ModelSerializer):
         Requires 'request' in serializer context.
         """
         request = self.context.get('request')
-        # Ensure the API endpoint matches your urls.py configuration
+
         return request.build_absolute_uri(f'/api/offerdetails/{obj.id}/')
 
 
@@ -176,6 +187,8 @@ class OfferRetrieveSerializer(serializers.ModelSerializer):
     min_delivery_time = serializers.IntegerField(
         source='overall_min_delivery_time', read_only=True
     )
+    image = serializers.FileField(allow_empty_file=True, required=False)
+    uploaded_at = serializers.DateTimeField(source='created_at', read_only=True)
 
     class Meta:
         model = Offer
@@ -190,6 +203,7 @@ class OfferRetrieveSerializer(serializers.ModelSerializer):
             'details',
             'min_price',
             'min_delivery_time',
+            'uploaded_at', 
         ]
 
 
@@ -248,12 +262,12 @@ class OfferPatchSerializer(serializers.ModelSerializer):
 
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
-        instance.save()
+        instance.save() 
 
         if details_data is not None:
             for incoming_detail in details_data:
                 offer_type = incoming_detail.get('offer_type')
- 
+
                 if not offer_type:
                     raise serializers.ValidationError(
                         {"offer_type": "Offer type is required for each detail in PATCH."}
@@ -264,7 +278,10 @@ class OfferPatchSerializer(serializers.ModelSerializer):
                 except OfferDetail.DoesNotExist:
                     continue
 
-         
+                detail_file = incoming_detail.pop('file', None)
+                if detail_file is not None:
+                    detail_instance.file = detail_file
+
                 for attr, value in incoming_detail.items():
                     setattr(detail_instance, attr, value)
                 detail_instance.save()

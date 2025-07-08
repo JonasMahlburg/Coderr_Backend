@@ -14,7 +14,7 @@ class OfferDetailInline(admin.TabularInline):
         'price',
         'revisions',
         'delivery_time_in_days',
-        'offer_type'
+        'offer_type',
     )
 
 @admin.register(Offer)
@@ -29,7 +29,8 @@ class OfferAdmin(admin.ModelAdmin):
         'offer_type',
         'display_detail_count',
         'created_at',
-        'updated_at'
+        'updated_at',
+        'image'
     )
 
     list_filter = (
@@ -48,7 +49,7 @@ class OfferAdmin(admin.ModelAdmin):
 
     fieldsets = (
         (None, {
-            'fields': ('user', 'title', 'description', 'offer_type'),
+            'fields': ('user', 'title', 'description', 'offer_type', 'image'),
             'description': 'Main information about the offer.'
         }),
         ('Timestamps', {

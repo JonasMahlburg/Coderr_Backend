@@ -44,7 +44,7 @@ class UserProfileAdmin(admin.ModelAdmin):
                 'location',
                 'tel',
                 'working_hours',
-                'created_at', # 'created_at' is read-only and appears here
+                'created_at',
             )
         }),
     )

@@ -23,7 +23,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
     tel = serializers.CharField(allow_blank=True, default='')
     description = serializers.CharField(allow_blank=True, default='')
     working_hours = serializers.CharField(allow_blank=True, default='')
-    file = serializers.FileField(allow_empty_file=True, required=False)
+    file = serializers.ImageField(allow_empty_file=True, required=False)
 
     class Meta:
         model = UserProfile
@@ -86,7 +86,7 @@ class CustomerProfileSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='user.username', read_only=True, default='')
     first_name = serializers.CharField(source='user.first_name', allow_blank=True, default='')
     last_name = serializers.CharField(source='user.last_name', allow_blank=True, default='')
-    file = serializers.FileField(allow_empty_file=True, required=False)
+    file = serializers.ImageField(allow_empty_file=True, required=False)
     uploaded_at = serializers.DateTimeField(source='created_at', read_only=True)
     type = serializers.CharField(read_only=True, default='customer')
 
@@ -112,7 +112,7 @@ class BusinessProfileSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='user.username', read_only=True, default='')
     first_name = serializers.CharField(source='user.first_name', allow_blank=True, default='')
     last_name = serializers.CharField(source='user.last_name', allow_blank=True, default='')
-    file = serializers.FileField(allow_empty_file=True, required=False)
+    file = serializers.ImageField(allow_empty_file=True, required=False)
     location = serializers.CharField(allow_blank=True, default='')
     tel = serializers.CharField(allow_blank=True, default='')
     description = serializers.CharField(allow_blank=True, default='')
