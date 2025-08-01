@@ -85,7 +85,7 @@ CORS_ALLOWED_ORIGINS = [
 
   'http://localhost:5500',
 
-  'http://35.204.204.97',
+  'http://34.13.212.51',
 
   'http://coderr.jonas-mahlburg.de',
 ]
