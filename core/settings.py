@@ -72,7 +72,7 @@ CSRF_TRUSTED_ORIGINS = [
 
   'http://35.204.204.97',
 
-  'http://coderr.jonas-mahlburg.de',
+  'http://coderr-site.jonas-mahlburg.de',
 
 
 ]
@@ -87,7 +87,7 @@ CORS_ALLOWED_ORIGINS = [
 
   'http://34.13.212.51',
 
-  'http://coderr.jonas-mahlburg.de',
+  'http://coderr-site.jonas-mahlburg.de',
 ]
 
 ROOT_URLCONF = 'core.urls'

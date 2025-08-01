@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 This script populates the Django database with sample data for testing purposes.
 It creates users (business and customer), offers with details, orders, and reviews,
